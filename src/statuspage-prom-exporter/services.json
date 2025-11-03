@@ -1,0 +1,27 @@
+{
+  "conga": {
+    "url": "https://status.conga.com/api/v2/summary.json",
+    "type": "status_page",
+    "name": "Conga"
+  },
+  "gong": {
+    "url": "https://status.gong.io/api/v2/summary.json",
+    "type": "status_page",
+    "name": "Gong"
+  },
+  "madkudu": {
+    "url": "https://status.madkudu.com/api/v2/summary.json",
+    "type": "status_page",
+    "name": "MadKudu"
+  },
+  "docusign": {
+    "url": "https://status.docusign.com/api/v2/summary.json",
+    "type": "status_page",
+    "name": "DocuSign"
+  },
+  "cybersource": {
+    "url": "https://status.cybersource.com/api/v2/summary.json",
+    "type": "status_page",
+    "name": "CyberSource"
+  }
+}
