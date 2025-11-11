@@ -30,6 +30,8 @@ Component Monitoring:
     - Non-operational components trigger alerts even without active incidents
     - Component names are included in alert details for better context
     - Partial outages (some components down) are detected and reported
+    - Component-level status is tracked in separate Prometheus gauge
+    - Each component status is mapped: operational=1, degraded/outage=-1, maintenance=0
 
 Status Mapping:
     Atlassian Status Page.io indicators mapped to numeric values:
@@ -50,6 +52,7 @@ Return Format:
     - error: Error message (if success=False)
     - incident_metadata: List of dicts with incident details (ID, shortlink, duration, etc.)
     - maintenance_metadata: List of dicts with maintenance details (ID, schedule, shortlink, etc.)
+    - component_metadata: List of dicts with component details (name, status, status_value)
 
 Error Handling:
     - Network errors (timeouts, connection failures) with automatic retry (3 attempts)
@@ -145,6 +148,33 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             if c.get('status', '').lower() != 'operational'
         ]
         
+        # Extract component metadata for component-level monitoring
+        component_metadata = []
+        for comp in components:
+            component_name = comp.get('name', 'Unknown')
+            component_status = comp.get('status', 'unknown').lower()
+            
+            # Map component status to numeric value
+            # StatusPage.io component statuses: operational, degraded, partial_outage, major_outage, under_maintenance
+            if component_status == 'operational':
+                status_value = 1
+            elif component_status in ['degraded', 'partial_outage', 'major_outage', 'degraded_performance']:
+                status_value = -1
+            elif component_status in ['under_maintenance', 'maintenance']:
+                status_value = 0
+            else:
+                status_value = 0  # Unknown status defaults to 0
+            
+            component_metadata.append({
+                'name': component_name,
+                'status': component_status,
+                'status_value': status_value
+            })
+            
+            logger.debug(f"Status page service {service_key}: Component '{component_name}': {component_status} (value: {status_value})")
+        
+        logger.debug(f"Status page service {service_key}: Extracted {len(component_metadata)} component(s)")
+        
         # Filter incidents to only ACTIVE ones (exclude resolved/completed/postmortem)
         terminal_statuses = {'resolved', 'completed', 'postmortem'}
         all_incidents = data.get('incidents', [])
@@ -174,9 +204,22 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
         
         # Check for active incidents and extract their names for more detailed information
         if active_incidents:
+            # Deduplicate incidents by ID (in case API returns duplicates with slightly different timestamps)
+            seen_incident_ids = set()
+            unique_incidents = []
+            for inc in active_incidents:
+                incident_id = inc.get('id', 'unknown')
+                if incident_id not in seen_incident_ids:
+                    seen_incident_ids.add(incident_id)
+                    unique_incidents.append(inc)
+                else:
+                    logger.debug(f"Status page service {service_key}: Skipping duplicate incident {incident_id}")
+            
+            logger.debug(f"Status page service {service_key}: Found {len(active_incidents)} active incident(s), {len(unique_incidents)} unique after deduplication")
+            
             # Get all active incident names and affected components
             incident_details = []
-            for inc in active_incidents:
+            for inc in unique_incidents:
                 name = inc.get('name', 'Unnamed incident')
                 incident_id = inc.get('id', 'unknown')
                 shortlink = inc.get('shortlink', '')
@@ -256,7 +299,21 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
         # Collect maintenance metadata
         if active_maintenances:
             logger.debug(f"Status page service {service_key}: Building maintenance metadata for {len(active_maintenances)} active maintenance(s)")
+            
+            # Deduplicate maintenance events by ID (in case API returns duplicates with slightly different timestamps)
+            seen_maintenance_ids = set()
+            unique_maintenances = []
             for maint in active_maintenances:
+                maintenance_id = maint.get('id', 'unknown')
+                if maintenance_id not in seen_maintenance_ids:
+                    seen_maintenance_ids.add(maintenance_id)
+                    unique_maintenances.append(maint)
+                else:
+                    logger.debug(f"Status page service {service_key}: Skipping duplicate maintenance {maintenance_id}")
+            
+            logger.debug(f"Status page service {service_key}: Found {len(active_maintenances)} active maintenance(s), {len(unique_maintenances)} unique after deduplication")
+            
+            for maint in unique_maintenances:
                 maintenance_id = maint.get('id', 'unknown')
                 name = maint.get('name', 'Unnamed maintenance')
                 scheduled_start = maint.get('scheduled_for', '') or maint.get('created_at', '')
@@ -317,7 +374,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'details': description,
             'success': True,
             'incident_metadata': incident_metadata,  # List of incident details with metadata
-            'maintenance_metadata': maintenance_metadata  # List of maintenance details with metadata
+            'maintenance_metadata': maintenance_metadata,  # List of maintenance details with metadata
+            'component_metadata': component_metadata  # List of component details with status
         }
         
     except requests.exceptions.HTTPError as e:
@@ -349,7 +407,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'success': False,
             'error': str(e),
             'incident_metadata': [],
-            'maintenance_metadata': []
+            'maintenance_metadata': [],
+            'component_metadata': []
         }
     except requests.exceptions.Timeout as e:
         logger.warning(f"Timeout error for {service_key}: {e}")
@@ -362,7 +421,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'success': False,
             'error': str(e),
             'incident_metadata': [],
-            'maintenance_metadata': []
+            'maintenance_metadata': [],
+            'component_metadata': []
         }
     except requests.exceptions.ConnectionError as e:
         logger.warning(f"Connection error for {service_key}: {e}")
@@ -375,7 +435,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'success': False,
             'error': str(e),
             'incident_metadata': [],
-            'maintenance_metadata': []
+            'maintenance_metadata': [],
+            'component_metadata': []
         }
     except requests.exceptions.RequestException as e:
         logger.error(f"Request error for {service_key}: {e}")
@@ -388,7 +449,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'success': False,
             'error': str(e),
             'incident_metadata': [],
-            'maintenance_metadata': []
+            'maintenance_metadata': [],
+            'component_metadata': []
         }
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error for {service_key}: {e}")
@@ -401,7 +463,8 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'success': False,
             'error': str(e),
             'incident_metadata': [],
-            'maintenance_metadata': []
+            'maintenance_metadata': [],
+            'component_metadata': []
         }
     except Exception as e:
         logger.error(f"Unexpected error for {service_key}: {e}")
@@ -442,5 +505,7 @@ def check_service_status(service_key: str, service_config: Dict[str, Any]) -> Di
             'details': f"Unknown service type: {service_type}",
             'success': False,
             'error': f"Unknown service type: {service_type}",
-            'incident_metadata': []
+            'incident_metadata': [],
+            'maintenance_metadata': [],
+            'component_metadata': []
         }

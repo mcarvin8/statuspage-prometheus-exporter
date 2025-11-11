@@ -28,6 +28,10 @@ Metrics:
                 scheduled_start, scheduled_end, shortlink, affected_components
         Values: Always 1 when maintenance is active
 
+    - statuspage_component_status: Individual component status
+        Labels: service_name, component_name
+        Values: 1 (operational), 0 (maintenance), -1 (degraded/down)
+
 The metrics are designed for use in Grafana dashboards with:
     - Status indicator panels
     - Alert rules for service degradation/outages
@@ -74,4 +78,11 @@ statuspage_maintenance_info = Gauge(
     'Active maintenance event metadata with ID, name, schedule, and link',
     ['service_name', 'service_type', 'maintenance_id', 'maintenance_name',
      'scheduled_start', 'scheduled_end', 'shortlink', 'affected_components']
+)
+
+# Component status gauge
+statuspage_component_status = Gauge(
+    'statuspage_component_status',
+    'Status of individual service components (1=operational, 0=maintenance, -1=degraded/down)',
+    ['service_name', 'component_name']
 )
