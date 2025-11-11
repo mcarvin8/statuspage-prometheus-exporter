@@ -30,6 +30,9 @@ The exporter exposes the following Prometheus metrics:
 - `statuspage_maintenance_info`: Active maintenance event metadata
   - Labels: `service_name`, `service_type`, `maintenance_id`, `maintenance_name`, `scheduled_start`, `scheduled_end`, `shortlink`, `affected_components`
 
+- `statuspage_component_status`: Individual component status
+  - Labels: `service_name`, `component_name`
+
 ## Configuration
 
 ### Service Configuration
