@@ -79,18 +79,6 @@
       "tooltip": "",
       "type": "link",
       "url": "https://status.conga.com/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Outreach Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.outreach.io/"
     }
   ],
   "panels": [
@@ -100,7 +88,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 5,
+        "h": 2,
         "w": 24,
         "x": 0,
         "y": 0
@@ -112,7 +100,7 @@
           "showLineNumbers": false,
           "showMiniMap": false
         },
-        "content": "<h2 style=\"color: orange; text-align: center;\">\n    Atlassian Status Page Monitoring\n</h2>\n\n<p style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  Monitors services using Atlassian Status Page.io over 20 minute intervals.\n  These metrics are retained for 7 days.\n</p>\n\n<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  Status Indicators:\n</div>\n\n<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Maintenance</li>\n    <li><code>-1</code> = Degraded (Incident)</li>\n  </ul>\n</div>",
+        "content": "<h2 style=\"color: orange; text-align: center;\">\n    Atlassian Status Page Monitoring\n</h2>\n\n<p style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  Monitors services using Atlassian Status Page.io over 20 minute intervals.\n  These metrics are retained for 7 days.\n</p>",
         "mode": "html"
       },
       "pluginVersion": "12.0.5",
@@ -126,7 +114,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 5
+        "y": 2
       },
       "id": 10,
       "panels": [],
@@ -138,7 +126,7 @@
         "type": "prometheus",
         "uid": "cip-o11y-aws-prd-us-west-2-theta"
       },
-      "description": "",
+      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Maintenance</li>\n    <li><code>-1</code> = Degraded (Incident)</li>\n  </ul>\n</div>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -197,10 +185,10 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 6
+        "y": 3
       },
       "id": 5,
-      "interval": "20m",
+      "interval": "10m",
       "options": {
         "legend": {
           "calcs": [],
@@ -223,14 +211,14 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "max by (service_name) (max_over_time(statuspage_service_status[20m]))",
+          "expr": "max by (service_name) (statuspage_service_status)",
           "instant": false,
           "legendFormat": "{{service_name}}",
           "range": true,
           "refId": "A"
         }
       ],
-      "title": "Service Status Trend",
+      "title": "Application Status Trend",
       "transparent": true,
       "type": "timeseries"
     },
@@ -239,7 +227,7 @@
         "type": "prometheus",
         "uid": "cip-o11y-aws-prd-us-west-2-theta"
       },
-      "description": "",
+      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Maintenance</li>\n    <li><code>-1</code> = Degraded (Incident)</li>\n  </ul>\n</div>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -270,13 +258,13 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 0,
-        "y": 14
+        "y": 11
       },
       "id": 1,
-      "interval": "20m",
+      "interval": "1m",
       "options": {
         "colorMode": "value",
         "graphMode": "area",
@@ -310,7 +298,7 @@
           "refId": "A"
         }
       ],
-      "title": "Service Status",
+      "title": "Application Status",
       "transparent": true,
       "type": "stat"
     },
@@ -343,10 +331,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 9,
         "w": 12,
         "x": 12,
-        "y": 14
+        "y": 11
       },
       "id": 3,
       "interval": "20m",
@@ -383,512 +371,895 @@
           "refId": "A"
         }
       ],
-      "title": "Service Response Time",
+      "title": "Application Response Time",
       "transparent": true,
       "type": "stat"
     },
     {
-      "collapsed": false,
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 20
+      },
+      "id": 9,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "Tracks number of incidents open against each application over time.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 21
+          },
+          "id": 12,
+          "interval": "5m",
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum by (service_name) (statuspage_incident_info)",
+              "instant": false,
+              "legendFormat": "{{service_name}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Application Incidents Trend",
+          "transparent": true,
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false,
+                "inspect": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Application Name"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 144
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Impact"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 87
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Started At"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 216
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Incident Name"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 288
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Incident ID"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 139
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Shortlink"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "targetBlank": true,
+                        "title": "Shortlink",
+                        "url": "${__data.fields[\"Shortlink\"]}"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 256
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 53
+          },
+          "id": 11,
+          "interval": "10m",
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "enablePagination": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Started At"
+              }
+            ]
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "statuspage_incident_info{incident_name!=\"No Active Incidents\"}",
+              "format": "table",
+              "instant": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Application Incidents",
+          "transformations": [
+            {
+              "id": "groupBy",
+              "options": {
+                "fields": {
+                  "Value": {
+                    "aggregations": []
+                  },
+                  "affected_components": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "impact": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "incident_id": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "incident_name": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "service_name": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "service_type": {
+                    "aggregations": []
+                  },
+                  "shortlink": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "started_at": {
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
+                  }
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "includeByName": {},
+                "indexByName": {
+                  "affected_components": 6,
+                  "impact": 2,
+                  "incident_id": 4,
+                  "incident_name": 5,
+                  "service_name": 0,
+                  "shortlink": 1,
+                  "started_at (lastNotNull)": 3
+                },
+                "renameByName": {
+                  "affected_components": "Affected Components",
+                  "impact": "Impact",
+                  "incident_id": "Incident ID",
+                  "incident_name": "Incident Name",
+                  "service_name": "Application Name",
+                  "shortlink": "Shortlink",
+                  "started_at": "Started At",
+                  "started_at (lastNotNull)": "Started At"
+                }
+              }
+            }
+          ],
+          "transparent": true,
+          "type": "table"
+        }
+      ],
+      "title": "Incidents",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 21
+      },
+      "id": 8,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "Tracks number of planned maintenance events open against each application over time.",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "palette-classic"
+              },
+              "custom": {
+                "axisBorderShow": false,
+                "axisCenteredZero": false,
+                "axisColorMode": "text",
+                "axisLabel": "",
+                "axisPlacement": "auto",
+                "barAlignment": 0,
+                "barWidthFactor": 0.6,
+                "drawStyle": "line",
+                "fillOpacity": 0,
+                "gradientMode": "none",
+                "hideFrom": {
+                  "legend": false,
+                  "tooltip": false,
+                  "viz": false
+                },
+                "insertNulls": false,
+                "lineInterpolation": "linear",
+                "lineWidth": 1,
+                "pointSize": 5,
+                "scaleDistribution": {
+                  "type": "linear"
+                },
+                "showPoints": "auto",
+                "spanNulls": true,
+                "stacking": {
+                  "group": "A",
+                  "mode": "none"
+                },
+                "thresholdsStyle": {
+                  "mode": "off"
+                }
+              },
+              "mappings": [],
+              "min": 0,
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 62
+          },
+          "id": 13,
+          "interval": "5m",
+          "options": {
+            "legend": {
+              "calcs": [],
+              "displayMode": "list",
+              "placement": "bottom",
+              "showLegend": true
+            },
+            "tooltip": {
+              "hideZeros": false,
+              "mode": "single",
+              "sort": "none"
+            }
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "sum by (service_name) (statuspage_maintenance_info)",
+              "instant": false,
+              "legendFormat": "{{service_name}}",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Application Maintenance Trend",
+          "transparent": true,
+          "type": "timeseries"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "auto"
+                },
+                "filterable": false,
+                "inspect": true
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "green"
+                  },
+                  {
+                    "color": "red",
+                    "value": 80
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Shortlink"
+                },
+                "properties": [
+                  {
+                    "id": "links",
+                    "value": [
+                      {
+                        "targetBlank": true,
+                        "title": "Shortlink",
+                        "url": "${__data.fields[\"Shortlink\"]}"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.width",
+                    "value": 264
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Application Name"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 142
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Scheduled Start"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 238
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Scheduled End"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 232
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Maintenance ID"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 158
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Maintenance Name"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 409
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Affected Components"
+                },
+                "properties": [
+                  {
+                    "id": "custom.width",
+                    "value": 712
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 8,
+            "w": 24,
+            "x": 0,
+            "y": 70
+          },
+          "id": 7,
+          "interval": "10m",
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "enablePagination": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": [
+              {
+                "desc": true,
+                "displayName": "Scheduled Start"
+              }
+            ]
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "statuspage_maintenance_info{maintenance_name!=\"No Active Maintenance\"}",
+              "format": "table",
+              "instant": false,
+              "legendFormat": "__auto",
+              "range": true,
+              "refId": "A"
+            }
+          ],
+          "title": "Application Maintenace",
+          "transformations": [
+            {
+              "id": "groupBy",
+              "options": {
+                "fields": {
+                  "affected_components": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "maintenance_id": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "maintenance_name": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "scheduled_end": {
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
+                  },
+                  "scheduled_start": {
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
+                  },
+                  "service_name": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  },
+                  "service_type": {
+                    "aggregations": []
+                  },
+                  "shortlink": {
+                    "aggregations": [],
+                    "operation": "groupby"
+                  }
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {},
+                "includeByName": {},
+                "indexByName": {
+                  "affected_components": 6,
+                  "maintenance_id": 4,
+                  "maintenance_name": 5,
+                  "scheduled_end (lastNotNull)": 3,
+                  "scheduled_start (lastNotNull)": 2,
+                  "service_name": 0,
+                  "shortlink": 1
+                },
+                "renameByName": {
+                  "affected_components": "Affected Components",
+                  "maintenance_id": "Maintenance ID",
+                  "maintenance_name": "Maintenance Name",
+                  "scheduled_end": "Scheduled End",
+                  "scheduled_end (lastNotNull)": "Scheduled End",
+                  "scheduled_start": "Scheduled Start",
+                  "scheduled_start (lastNotNull)": "Scheduled Start",
+                  "service_name": "Application Name",
+                  "shortlink": "Shortlink"
+                }
+              }
+            }
+          ],
+          "transparent": true,
+          "type": "table"
+        }
+      ],
+      "title": "Maintenance",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
       "gridPos": {
         "h": 1,
         "w": 24,
         "x": 0,
         "y": 22
       },
-      "id": 9,
-      "panels": [],
-      "title": "Incidents",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "cip-o11y-aws-prd-us-west-2-theta"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "filterable": false,
-            "inspect": true
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Service Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 144
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Impact"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 87
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Started At"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 216
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Incident Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 288
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Incident ID"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 139
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Shortlink"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
-                  {
-                    "targetBlank": true,
-                    "title": "Shortlink",
-                    "url": "${__data.fields[\"Shortlink\"]}"
-                  }
-                ]
-              },
-              {
-                "id": "custom.width",
-                "value": 256
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 23
-      },
-      "id": 11,
-      "interval": "20m",
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "enablePagination": false,
-          "fields": "",
-          "reducer": [
-            "sum"
-          ],
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Started At"
-          }
-        ]
-      },
-      "pluginVersion": "12.0.5",
-      "targets": [
+      "id": 15,
+      "panels": [
         {
           "datasource": {
             "type": "prometheus",
             "uid": "cip-o11y-aws-prd-us-west-2-theta"
           },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "statuspage_incident_info{}",
-          "format": "table",
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Service Incidents",
-      "transformations": [
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "Value": {
-                "aggregations": []
+          "description": "Status of individual components",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
               },
-              "affected_components": {
-                "aggregations": [],
-                "operation": "groupby"
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "color-text"
+                },
+                "filterable": true,
+                "inspect": false
               },
-              "impact": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "incident_id": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "incident_name": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "service_name": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "service_type": {
-                "aggregations": []
-              },
-              "shortlink": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "started_at": {
-                "aggregations": [],
-                "operation": "groupby"
-              }
-            }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {},
-            "indexByName": {
-              "affected_components": 6,
-              "impact": 2,
-              "incident_id": 4,
-              "incident_name": 5,
-              "service_name": 0,
-              "shortlink": 1,
-              "started_at": 3
-            },
-            "renameByName": {
-              "affected_components": "Affected Components",
-              "impact": "Impact",
-              "incident_id": "Incident ID",
-              "incident_name": "Incident Name",
-              "service_name": "Service Name",
-              "shortlink": "Shortlink",
-              "started_at": "Started At"
-            }
-          }
-        }
-      ],
-      "transparent": true,
-      "type": "table"
-    },
-    {
-      "collapsed": false,
-      "gridPos": {
-        "h": 1,
-        "w": 24,
-        "x": 0,
-        "y": 31
-      },
-      "id": 8,
-      "panels": [],
-      "title": "Maintenance",
-      "type": "row"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "cip-o11y-aws-prd-us-west-2-theta"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "custom": {
-            "align": "auto",
-            "cellOptions": {
-              "type": "auto"
-            },
-            "filterable": false,
-            "inspect": true
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
-              },
-              {
-                "color": "red",
-                "value": 80
-              }
-            ]
-          }
-        },
-        "overrides": [
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Shortlink"
-            },
-            "properties": [
-              {
-                "id": "links",
-                "value": [
+              "mappings": [
+                {
+                  "options": {
+                    "0": {
+                      "color": "yellow",
+                      "index": 1,
+                      "text": "Maintenance"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 0,
+                      "text": "Operational"
+                    },
+                    "-1": {
+                      "color": "red",
+                      "index": 2,
+                      "text": "Degraded"
+                    }
+                  },
+                  "type": "value"
+                }
+              ],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
                   {
-                    "targetBlank": true,
-                    "title": "Shortlink",
-                    "url": "${__data.fields[\"Shortlink\"]}"
+                    "color": "text"
                   }
                 ]
+              }
+            },
+            "overrides": []
+          },
+          "gridPos": {
+            "h": 17,
+            "w": 24,
+            "x": 0,
+            "y": 23
+          },
+          "id": 14,
+          "interval": "5m",
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true,
+            "sortBy": []
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
               },
-              {
-                "id": "custom.width",
-                "value": 264
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Service Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 142
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Scheduled Start"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 238
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Scheduled End"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 232
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Maintenance ID"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 158
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Maintenance Name"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 409
-              }
-            ]
-          },
-          {
-            "matcher": {
-              "id": "byName",
-              "options": "Affected Components"
-            },
-            "properties": [
-              {
-                "id": "custom.width",
-                "value": 712
-              }
-            ]
-          }
-        ]
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 24,
-        "x": 0,
-        "y": 32
-      },
-      "id": 7,
-      "interval": "20m",
-      "options": {
-        "cellHeight": "sm",
-        "footer": {
-          "countRows": false,
-          "enablePagination": false,
-          "fields": "",
-          "reducer": [
-            "sum"
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "statuspage_component_status",
+              "format": "table",
+              "hide": false,
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "A"
+            }
           ],
-          "show": false
-        },
-        "showHeader": true,
-        "sortBy": [
-          {
-            "desc": true,
-            "displayName": "Scheduled Start"
-          }
-        ]
-      },
-      "pluginVersion": "12.0.5",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "cip-o11y-aws-prd-us-west-2-theta"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "statuspage_maintenance_info",
-          "format": "table",
-          "instant": false,
-          "legendFormat": "__auto",
-          "range": true,
-          "refId": "A"
-        }
-      ],
-      "title": "Service Maintenance",
-      "transformations": [
-        {
-          "id": "groupBy",
-          "options": {
-            "fields": {
-              "affected_components": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "maintenance_id": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "maintenance_name": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "scheduled_end": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "scheduled_start": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "service_name": {
-                "aggregations": [],
-                "operation": "groupby"
-              },
-              "service_type": {
-                "aggregations": []
-              },
-              "shortlink": {
-                "aggregations": [],
-                "operation": "groupby"
+          "title": "Application Component Status",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "calculateField",
+              "options": {
+                "alias": "Value",
+                "mode": "reduceRow",
+                "reduce": {
+                  "include": [
+                    "Value #A",
+                    "Value #B"
+                  ],
+                  "reducer": "max"
+                }
+              }
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true,
+                  "Value #A": true,
+                  "Value #B": true,
+                  "__name__": true,
+                  "component_name": false,
+                  "container": true,
+                  "endpoint": true,
+                  "instance": true,
+                  "job": true,
+                  "namespace": true,
+                  "pod": true,
+                  "service": true
+                },
+                "includeByName": {},
+                "indexByName": {
+                  "Time": 0,
+                  "Value": 11,
+                  "__name__": 1,
+                  "component_name": 3,
+                  "container": 4,
+                  "endpoint": 5,
+                  "instance": 6,
+                  "job": 7,
+                  "namespace": 8,
+                  "pod": 9,
+                  "service": 10,
+                  "service_name": 2
+                },
+                "renameByName": {
+                  "Value": "",
+                  "component_name": "Component Name",
+                  "service_name": "Application Name"
+                }
               }
             }
-          }
-        },
-        {
-          "id": "organize",
-          "options": {
-            "excludeByName": {},
-            "includeByName": {},
-            "indexByName": {
-              "affected_components": 6,
-              "maintenance_id": 4,
-              "maintenance_name": 5,
-              "scheduled_end": 3,
-              "scheduled_start": 2,
-              "service_name": 0,
-              "shortlink": 1
-            },
-            "renameByName": {
-              "affected_components": "Affected Components",
-              "maintenance_id": "Maintenance ID",
-              "maintenance_name": "Maintenance Name",
-              "scheduled_end": "Scheduled End",
-              "scheduled_start": "Scheduled Start",
-              "service_name": "Service Name",
-              "shortlink": "Shortlink"
-            }
-          }
+          ],
+          "transparent": true,
+          "type": "table"
         }
       ],
-      "transparent": true,
-      "type": "table"
+      "title": "Component Status",
+      "type": "row"
     }
   ],
   "preload": false,
@@ -917,5 +1288,5 @@
   "timezone": "browser",
   "title": "Atlassian Status Page Monitoring",
   "uid": "dezrf5c1sly4gc",
-  "version": 11
+  "version": 0
 }
