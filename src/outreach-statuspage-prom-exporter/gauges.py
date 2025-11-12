@@ -14,10 +14,6 @@ Metrics:
         Labels: service_name, service_type
         Values: Response time in seconds
     
-    - outreach_check_failures_counter: Counter for failed status checks
-        Labels: service_name, service_type, error_type
-        Tracks: Request failures, rendering errors, parse errors
-    
     - outreach_component_status: Individual component status
         Labels: service_name, component_name
         Values: 1 (operational), 0 (maintenance), -1 (degraded/down)
@@ -37,10 +33,9 @@ The metrics are designed for use in Grafana dashboards with:
     - Alert rules for service degradation/outages
     - Response time trend graphs
     - Component-level status tables
-    - Failure rate tracking and alerting
     - Incident drill-down with direct links and metadata
 """
-from prometheus_client import Gauge, Counter
+from prometheus_client import Gauge
 
 # Service status gauge (1=operational, 0=maintenance, -1=incident/down)
 outreach_status_gauge = Gauge(
@@ -54,13 +49,6 @@ outreach_response_time_gauge = Gauge(
     'outreach_response_time_seconds',
     'Response time for Outreach status page (includes JavaScript rendering)',
     ['service_name', 'service_type']
-)
-
-# Counter for tracking failed status checks
-outreach_check_failures_counter = Counter(
-    'outreach_check_failures_total',
-    'Total number of failed status checks (request failures, timeouts, parse errors)',
-    ['service_name', 'service_type', 'error_type']
 )
 
 # Component status gauge
@@ -85,3 +73,4 @@ outreach_maintenance_info = Gauge(
     ['service_name', 'service_type', 'maintenance_id', 'maintenance_name',
      'scheduled_start', 'scheduled_end', 'shortlink', 'affected_components']
 )
+

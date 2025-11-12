@@ -10,12 +10,20 @@ Functions:
 
 Process Flow:
     1. Check Outreach status page and collect status check results
-    2. Clear existing Prometheus gauge labels to prevent stale metrics
-    3. Immediately update all Prometheus metrics with collected results
-    4. Track failed checks in a separate counter metric
+    2. For failed requests, attempt to load cached response data as fallback
+    3. Clear existing Prometheus gauge labels to prevent stale metrics
+    4. Immediately update all Prometheus metrics with collected results
+    5. Failed checks are logged (check logs for failure details)
     
     This approach minimizes the window where Prometheus might scrape empty gauges
     by collecting all data before clearing and updating gauges atomically.
+    
+    Cache Fallback Strategy:
+    - When an API request fails, the service attempts to load the last successful
+      response from cache
+    - If cached data exists, it's used to update metrics, preventing alerts from
+      clearing and re-firing due to transient network issues
+    - This ensures continuity of monitoring even when individual requests fail
 
 Metrics Updated:
     - outreach_status_gauge: Service health status (-1=incident, 0=maintenance, 1=operational)
@@ -23,18 +31,18 @@ Metrics Updated:
     - outreach_component_status: Individual component statuses
     - outreach_incident_info: Active incident metadata (ID, name, impact, shortlink, etc.)
     - outreach_maintenance_info: Active maintenance metadata (ID, name, schedule, shortlink, etc.)
-    - outreach_check_failures_counter: Counter for failed status checks
 
 The orchestration ensures consistent metric labels and handles both successful
-and failed status checks gracefully. Failed checks are logged and counted but
-do not trigger incident alerts.
+and failed status checks gracefully. Failed checks fall back to cached data when
+available, preventing alert churn from transient failures.
 """
 import logging
 import re
 from outreach_checker import check_outreach_status
-from gauges import (outreach_status_gauge, outreach_response_time_gauge, 
-                    outreach_check_failures_counter, outreach_incident_info,
-                    outreach_maintenance_info, outreach_component_status)
+from gauges import (outreach_status_gauge, outreach_response_time_gauge,
+                    outreach_incident_info, outreach_maintenance_info,
+                    outreach_component_status)
+from cache_manager import load_service_response
 
 logger = logging.getLogger(__name__)
 
@@ -76,12 +84,30 @@ def monitor_outreach():
     # Step 1: Check Outreach status
     result = check_outreach_status()
     
-    # Log result immediately
-    if result['success']:
-        logger.info(f"Outreach: {result['raw_status']} "
-                   f"(response time: {result['response_time']:.2f}s)")
+    # If request failed, try to load cached response as fallback
+    if not result['success']:
+        logger.warning(f"Outreach: Check failed ({result.get('raw_status', 'unknown')}), attempting to load cached response...")
+        cached_result = load_service_response()
+        
+        if cached_result:
+            logger.info(f"Outreach: Using cached response data (from previous successful check)")
+            # Mark that this is cached data (for logging/metrics)
+            result = cached_result.copy()
+            result['from_cache'] = True
+        else:
+            logger.warning(f"Outreach: No cached data available, will skip gauge update - {result.get('error', 'Unknown error')}")
+            result['from_cache'] = False
     else:
-        logger.warning(f"Outreach: Check failed ({result.get('raw_status', 'unknown')}), skipping gauge update - {result.get('error', 'Unknown error')}")
+        # Successful request - cache will be saved by outreach_checker
+        result['from_cache'] = False
+    
+    # Log result immediately
+    cache_note = " (from cache)" if result.get('from_cache', False) else ""
+    if result['success'] or result.get('from_cache', False):
+        logger.info(f"Outreach: {result['raw_status']} "
+                   f"(response time: {result['response_time']:.2f}s){cache_note}")
+    else:
+        logger.warning(f"Outreach: Check failed ({result.get('raw_status', 'unknown')}), no cached data available - {result.get('error', 'Unknown error')}")
     
     # Step 2: Clear all existing gauge labels to remove stale metrics
     logger.debug("Clearing existing gauge labels before updating with new data...")
@@ -96,7 +122,8 @@ def monitor_outreach():
     status_text = result.get('status_text', 'Unknown')
     details = result.get('details', 'No details available')
     
-    logger.debug(f"Updating gauge for {SERVICE_NAME}: status={status_value} ({status_text}), details='{details}'")
+    from_cache = result.get('from_cache', False)
+    logger.debug(f"Updating gauge for {SERVICE_NAME}: status={status_value} ({status_text}), details='{details}', from_cache={from_cache}")
     
     # Only update gauges if status check succeeded or returned a valid status
     if status_value is not None:
@@ -234,14 +261,7 @@ def monitor_outreach():
                 shortlink='N/A',
                 affected_components='N/A'
             ).set(0)
-    else:
-        # Track failed checks in counter metric
-        error_type = result.get('raw_status', 'unknown')
-        outreach_check_failures_counter.labels(
-            service_name=SERVICE_NAME,
-            service_type=SERVICE_TYPE,
-            error_type=error_type
-        ).inc()
+    # Note: Failed checks are logged but not tracked in metrics (check logs for failure details)
     
     logger.info("Outreach monitoring completed")
 

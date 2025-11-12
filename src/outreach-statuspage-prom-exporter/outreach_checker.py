@@ -25,6 +25,7 @@ import time
 import logging
 from typing import Dict, Any, List
 import re
+from cache_manager import save_service_response
 
 # Try to import Selenium for JavaScript rendering
 try:
@@ -563,7 +564,7 @@ def check_outreach_status(url: str = "https://status.outreach.io/") -> Dict[str,
         logger.info(f"Parsed status: {status_text} ({raw_status})")
         logger.info(f"Found {len(incidents)} incident(s), {len(maintenances)} maintenance event(s)")
         
-        return {
+        result = {
             'status': status_value,
             'response_time': response_time,
             'raw_status': raw_status,
@@ -575,6 +576,11 @@ def check_outreach_status(url: str = "https://status.outreach.io/") -> Dict[str,
             'components': components,
             'javascript_rendered': use_selenium
         }
+        
+        # Save successful response to cache for fallback on future failures
+        save_service_response(result)
+        
+        return result
         
     except requests.exceptions.HTTPError as e:
         status_code = e.response.status_code if e.response is not None else 0
