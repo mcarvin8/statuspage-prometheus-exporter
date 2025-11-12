@@ -70,6 +70,7 @@ from urllib3.util.retry import Retry
 import logging
 import time
 from typing import Dict, Any
+from cache_manager import save_service_response
 
 # Load services configuration
 import os
@@ -366,7 +367,7 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
         
         logger.debug(f"Status page service {service_key}: Final result - status_value={status_value}, status_text='{status_text}'")
         
-        return {
+        result = {
             'status': status_value,
             'response_time': response_time,
             'raw_status': indicator,
@@ -377,7 +378,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'maintenance_metadata': maintenance_metadata,  # List of maintenance details with metadata
             'component_metadata': component_metadata  # List of component details with status
         }
+
+        # Save successful response to cache for fallback on future failures
+        save_service_response(service_key, result)
         
+        return result
+
     except requests.exceptions.HTTPError as e:
         # HTTP errors (4xx, 5xx) - categorize for better tracking
         status_code = e.response.status_code if e.response is not None else 0

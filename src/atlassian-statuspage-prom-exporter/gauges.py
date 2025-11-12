@@ -13,11 +13,7 @@ Metrics:
     - statuspage_response_time_gauge: API response time
         Labels: service_name, service_type
         Values: Response time in seconds
-    
-    - statuspage_check_failures_counter: Counter for failed status checks
-        Labels: service_name, service_type, error_type
-        Tracks: Request failures, JSON errors, and other check failures
-    
+
     - statuspage_incident_info: Info metric for active incident metadata
         Labels: service_name, service_type, incident_id, incident_name, 
                 impact, shortlink, started_at, affected_components
@@ -40,7 +36,7 @@ The metrics are designed for use in Grafana dashboards with:
     - Failure rate tracking and alerting
     - Incident drill-down with direct links and metadata
 """
-from prometheus_client import Gauge, Counter
+from prometheus_client import Gauge
 
 # Service status gauge (1=operational, 0=maintenance, -1=incident/down)
 # Simplified to just track status value - incident details are in statuspage_incident_info
@@ -55,13 +51,6 @@ statuspage_response_time_gauge = Gauge(
     'statuspage_response_time_seconds',
     'Response time for status page API endpoints',
     ['service_name', 'service_type']
-)
-
-# Counter for tracking failed status checks
-statuspage_check_failures_counter = Counter(
-    'statuspage_check_failures_total',
-    'Total number of failed status checks (request failures, timeouts, parse errors)',
-    ['service_name', 'service_type', 'error_type']
 )
 
 # Gauge for incident metadata (allows clearing stale incidents)

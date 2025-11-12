@@ -21,9 +21,6 @@ The exporter exposes the following Prometheus metrics:
 - `statuspage_response_time_seconds`: API response time in seconds
   - Labels: `service_name`, `service_type`
   
-- `statuspage_check_failures_total`: Counter for failed status checks
-  - Labels: `service_name`, `service_type`, `error_type`
-  
 - `statuspage_incident_info`: Active incident metadata
   - Labels: `service_name`, `service_type`, `incident_id`, `incident_name`, `impact`, `shortlink`, `started_at`, `affected_components`
   

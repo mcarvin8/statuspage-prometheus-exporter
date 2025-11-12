@@ -11,11 +11,20 @@ Functions:
 
 Process Flow:
     1. Clear existing Prometheus gauge labels to prevent stale metrics
-    2. Iterate through all services defined in services.json
-    3. Check each service's status using appropriate checker function
-    4. Update Prometheus metrics with status, response time, and details
-    5. Track failed checks in a separate counter metric
-    6. Log results for operational visibility
+    2. For failed requests, attempt to load cached response data as fallback
+    3. Clear existing Prometheus gauge labels to prevent stale metrics
+    4. Immediately update all Prometheus metrics with collected results
+    5. Failed checks are logged (check logs for failure details)
+
+    This approach minimizes the window where Prometheus might scrape empty gauges
+    by collecting all data before clearing and updating gauges atomically.
+    
+    Cache Fallback Strategy:
+    - When an API request fails, the service attempts to load the last successful
+      response from cache
+    - If cached data exists, it's used to update metrics, preventing alerts from
+      clearing and re-firing due to transient network issues
+    - This ensures continuity of monitoring even when individual requests fail
 
 Metrics Updated:
     - statuspage_status_gauge: Service health status (-1=incident, 0=maintenance, 1=operational)
@@ -26,15 +35,16 @@ Metrics Updated:
     - statuspage_check_failures_counter: Counter for failed status checks
 
 The orchestration ensures consistent metric labels and handles both successful
-and failed status checks gracefully. Failed checks are logged and counted but
-do not trigger incident alerts.
+and failed status checks gracefully. Failed checks fall back to cached data when
+available, preventing alert churn from transient failures.
 """
 import logging
 import re
 from service_checker import SERVICES, check_service_status
 from gauges import (statuspage_status_gauge, statuspage_response_time_gauge, 
-                    statuspage_check_failures_counter, statuspage_incident_info,
+                    statuspage_incident_info,
                     statuspage_maintenance_info, statuspage_component_status)
+from cache_manager import load_service_response
 logger = logging.getLogger(__name__)
 
 def normalize_timestamp(timestamp_str):
@@ -68,7 +78,34 @@ def monitor_services():
         logger.info(f"Checking {service_config['name']} ({service_key})...")
         
         result = check_service_status(service_key, service_config)
-        
+        original_failure = None
+
+        # If request failed, try to load cached response as fallback
+        if not result['success']:
+            # Store original failure info for tracking
+            original_failure = {
+                'raw_status': result.get('raw_status', 'unknown'),
+                'error': result.get('error', 'Unknown error')
+            }
+            
+            logger.warning(f"{service_config['name']}: Check failed ({original_failure['raw_status']}), attempting to load cached response...")
+            cached_result = load_service_response(service_key)
+            
+            if cached_result:
+                logger.info(f"{service_config['name']}: Using cached response data (from previous successful check)")
+                # Mark that this is cached data (for logging/metrics)
+                result = cached_result.copy()
+                result['from_cache'] = True
+                result['original_failure'] = original_failure  # Preserve failure info for logging
+            else:
+                logger.warning(f"{service_config['name']}: No cached data available, will skip gauge update - {original_failure['error']}")
+                result['from_cache'] = False
+                result['original_failure'] = original_failure
+        else:
+            # Successful request - cache will be saved by service_checker
+            result['from_cache'] = False
+            result['original_failure'] = None
+
         # Store result with service config for later processing
         results.append({
             'service_key': service_key,
@@ -77,11 +114,13 @@ def monitor_services():
         })
         
         # Log result immediately
-        if result['success']:
+        cache_note = " (from cache)" if result.get('from_cache', False) else ""
+        if result['success'] or result.get('from_cache', False):
             logger.info(f"{service_config['name']}: {result['raw_status']} "
-                       f"(response time: {result['response_time']:.2f}s)")
+                       f"(response time: {result['response_time']:.2f}s){cache_note}")
         else:
-            logger.warning(f"{service_config['name']}: Check failed ({result.get('raw_status', 'unknown')}), skipping gauge update - {result.get('error', 'Unknown error')}")
+            logger.warning(f"{service_config['name']}: Check failed ({result.get('raw_status', 'unknown')}), no cached data available - {result.get('error', 'Unknown error')}")
+
     
     # Step 2: Clear all existing gauge labels to remove stale metrics
     # This happens right before updating, minimizing the empty window
@@ -103,8 +142,10 @@ def monitor_services():
         status_value = result.get('status')
         status_text = result.get('status_text', 'Unknown')
         details = result.get('details', 'No details available')
-        
-        logger.debug(f"Updating gauge for {service_name}: status={status_value} ({status_text}), details='{details}'")
+        original_failure = result.get('original_failure')
+        from_cache = result.get('from_cache', False)
+
+        logger.debug(f"Updating gauge for {service_name}: status={status_value} ({status_text}), details='{details}', from_cache={from_cache}")
         
         # Only update gauges if status check succeeded or returned a valid status
         # Skip gauge updates for HTTPS request failures (status=None)
@@ -241,13 +282,6 @@ def monitor_services():
                 logger.info(f"{service_config['name']}: {len(component_metadata)} component(s) tracked in component_status gauge")
             else:
                 logger.debug(f"{service_name}: No component metadata available")
-        else:
-            # Track failed checks in counter metric
-            error_type = result.get('raw_status', 'unknown')
-            statuspage_check_failures_counter.labels(
-                service_name=service_name,
-                service_type=service_type,
-                error_type=error_type
-            ).inc()
-    
+        # Note: Failed checks are logged but not tracked in metrics (check logs for failure details)
+
     logger.info("Status page services monitoring completed")
