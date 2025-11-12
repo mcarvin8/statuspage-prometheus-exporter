@@ -8,7 +8,6 @@ A Prometheus exporter that monitors services using Atlassian Status Page.io stat
 - **Incident Tracking**: Monitors active incidents with detailed metadata (ID, name, impact, affected components)
 - **Maintenance Windows**: Tracks scheduled and active maintenance events
 - **Response Time Metrics**: Records API response times for each status check
-- **Failure Tracking**: Counts failed status checks for operational visibility
 - **Prometheus Metrics**: Exposes standard Prometheus metrics on configurable port
 
 ## Metrics Exposed
