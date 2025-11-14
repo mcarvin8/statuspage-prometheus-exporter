@@ -23,5 +23,15 @@
     "url": "https://status.cybersource.com/api/v2/summary.json",
     "type": "status_page",
     "name": "CyberSource"
+  },
+  "chilipiper": {
+    "url": "https://status.chilipiper.com//api/v2/summary.json",
+    "type": "status_page",
+    "name": "Chili Piper"
+  },
+  "qualified": {
+    "url": "https://status.qualified.io/api/v2/summary.json",
+    "type": "status_page",
+    "name": "Qualified"
   }
 }
