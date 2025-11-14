@@ -25,7 +25,7 @@
     "name": "CyberSource"
   },
   "chilipiper": {
-    "url": "https://status.chilipiper.com//api/v2/summary.json",
+    "url": "https://status.chilipiper.com/api/v2/summary.json",
     "type": "status_page",
     "name": "Chili Piper"
   },
