@@ -2,20 +2,15 @@
 Service Status Checking Module
 
 This module provides functions for checking the operational status of services
-using Atlassian Status Page.io format. It supports multiple service types and
-status page formats.
-
-Supported Service Types:
-    - status_page: Atlassian Status Page.io API format
-    - Extensible architecture for additional status page formats
+using Atlassian Status Page.io format.
 
 Configuration:
     - Service definitions loaded from services.json
-    - Each service includes: name, type, URL, and other type-specific config
+    - Each service includes: name, URL, and other configuration
 
 Functions:
     - check_status_page_service: Checks Atlassian Status Page.io API format
-    - check_service_status: Main dispatcher that routes to appropriate checker
+    - check_service_status: Main function that checks service status
 
 Incident Handling:
     - Filters incidents to only ACTIVE ones (excludes resolved/completed/postmortem)
@@ -497,21 +492,4 @@ def check_service_status(service_key: str, service_config: Dict[str, Any]) -> Di
     Returns:
         Dictionary with status information
     """
-    service_type = service_config['type']
-    
-    if service_type == 'status_page':
-        return check_status_page_service(service_key, service_config)
-    else:
-        logger.error(f"Unknown service type: {service_type}")
-        return {
-            'status': None,  # Don't set gauge on configuration errors
-            'response_time': 0,
-            'raw_status': 'config_error',
-            'status_text': 'Configuration Error',
-            'details': f"Unknown service type: {service_type}",
-            'success': False,
-            'error': f"Unknown service type: {service_type}",
-            'incident_metadata': [],
-            'maintenance_metadata': [],
-            'component_metadata': []
-        }
+    return check_status_page_service(service_key, service_config)

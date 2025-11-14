@@ -15,16 +15,16 @@ A Prometheus exporter that monitors services using Atlassian Status Page.io stat
 The exporter exposes the following Prometheus metrics:
 
 - `statuspage_service_status`: Service operational status (1=operational, 0=maintenance, -1=incident/down)
-  - Labels: `service_name`, `service_type`
+  - Labels: `service_name`
   
 - `statuspage_response_time_seconds`: API response time in seconds
-  - Labels: `service_name`, `service_type`
+  - Labels: `service_name`
   
 - `statuspage_incident_info`: Active incident metadata
-  - Labels: `service_name`, `service_type`, `incident_id`, `incident_name`, `impact`, `shortlink`, `started_at`, `affected_components`
+  - Labels: `service_name`, `incident_id`, `incident_name`, `impact`, `shortlink`, `started_at`, `affected_components`
   
 - `statuspage_maintenance_info`: Active maintenance event metadata
-  - Labels: `service_name`, `service_type`, `maintenance_id`, `maintenance_name`, `scheduled_start`, `scheduled_end`, `shortlink`, `affected_components`
+  - Labels: `service_name`, `maintenance_id`, `maintenance_name`, `scheduled_start`, `scheduled_end`, `shortlink`, `affected_components`
 
 - `statuspage_component_status`: Individual component status
   - Labels: `service_name`, `component_name`
@@ -39,7 +39,6 @@ Configure the services you want to monitor in `services.json`:
 {
   "service_key": {
     "url": "https://status.example.com/api/v2/summary.json",
-    "type": "status_page",
     "name": "Example Service"
   }
 }
@@ -47,7 +46,6 @@ Configure the services you want to monitor in `services.json`:
 
 Each service requires:
 - `url`: The full URL to the Status Page.io API summary endpoint (typically `/api/v2/summary.json`)
-- `type`: Currently supports `"status_page"` for Atlassian Status Page.io format
 - `name`: Display name for the service in metrics
 
 ### Environment Variables

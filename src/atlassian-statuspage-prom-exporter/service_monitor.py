@@ -138,7 +138,6 @@ def monitor_services():
         result = item['result']
         
         service_name = service_config['name']
-        service_type = service_config['type']
         status_value = result.get('status')
         status_text = result.get('status_text', 'Unknown')
         details = result.get('details', 'No details available')
@@ -153,13 +152,11 @@ def monitor_services():
             # Update main status gauge - simplified to just service_name and status value
             # All incident details are tracked separately in statuspage_incident_info
             statuspage_status_gauge.labels(
-                service_name=service_name,
-                service_type=service_type
+                service_name=service_name
             ).set(status_value)
             
             statuspage_response_time_gauge.labels(
-                service_name=service_name,
-                service_type=service_type
+                service_name=service_name
             ).set(result['response_time'])
             
             # Update incident metadata gauge for each active incident
@@ -185,7 +182,6 @@ def monitor_services():
                     
                     statuspage_incident_info.labels(
                         service_name=service_name,
-                        service_type=service_type,
                         incident_id=incident_id,
                         incident_name=incident_name,
                         impact=impact,
@@ -202,7 +198,6 @@ def monitor_services():
                 logger.debug(f"{service_name}: No incident metadata - setting statuspage_incident_info gauge to 0")
                 statuspage_incident_info.labels(
                     service_name=service_name,
-                    service_type=service_type,
                     incident_id='none',
                     incident_name='No Active Incidents',
                     impact='none',
@@ -233,7 +228,6 @@ def monitor_services():
                     
                     statuspage_maintenance_info.labels(
                         service_name=service_name,
-                        service_type=service_type,
                         maintenance_id=maintenance_id,
                         maintenance_name=maintenance_name,
                         scheduled_start=scheduled_start,
@@ -250,7 +244,6 @@ def monitor_services():
                 logger.debug(f"{service_name}: No maintenance metadata - setting statuspage_maintenance_info gauge to 0")
                 statuspage_maintenance_info.labels(
                     service_name=service_name,
-                    service_type=service_type,
                     maintenance_id='none',
                     maintenance_name='No Active Maintenance',
                     scheduled_start='N/A',

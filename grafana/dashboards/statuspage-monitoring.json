@@ -678,9 +678,6 @@
                     "aggregations": [],
                     "operation": "groupby"
                   },
-                  "service_type": {
-                    "aggregations": []
-                  },
                   "shortlink": {
                     "aggregations": [],
                     "operation": "groupby"
@@ -1047,9 +1044,6 @@
                   "service_name": {
                     "aggregations": [],
                     "operation": "groupby"
-                  },
-                  "service_type": {
-                    "aggregations": []
                   },
                   "shortlink": {
                     "aggregations": [],
