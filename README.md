@@ -1,6 +1,6 @@
-# Atlassian Status Page Prometheus Exporter
+# Atlassian StatusPage.io Prometheus Exporter
 
-A Prometheus exporter that monitors services using Atlassian Status Page.io status pages. This exporter periodically checks status page APIs to track service health, incidents, and maintenance windows, exposing metrics for integration with Prometheus and Grafana.
+A Prometheus exporter that monitors services using Atlassian StatusPage.io status pages. This exporter periodically checks status page APIs to track service health, incidents, and maintenance windows, exposing metrics for integration with Prometheus and Grafana.
 
 ## Features
 
@@ -166,12 +166,6 @@ statuspage_incident_info
 
 ```promql
 statuspage_response_time_seconds
-```
-
-### Monitor check failures
-
-```promql
-rate(statuspage_check_failures_total[5m])
 ```
 
 ## Requirements
