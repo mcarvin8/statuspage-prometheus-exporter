@@ -26,5 +26,13 @@
   "qualified": {
     "url": "https://status.qualified.io/api/v2/summary.json",
     "name": "Qualified"
+  },
+  "gainsight": {
+    "url": "https://status.gainsight.com/api/v2/summary.json",
+    "name": "Gainsight"
+  },
+  "leandata": {
+    "url": "https://status.leandata.com/api/v2/summary.json",
+    "name": "LeanData"
   }
 }
