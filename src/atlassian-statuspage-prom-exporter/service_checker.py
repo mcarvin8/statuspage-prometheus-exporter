@@ -1,16 +1,21 @@
 """
 Service Status Checking Module
 
-This module provides functions for checking the operational status of services
-using Atlassian Status Page.io format.
+This module provides functions for checking the operational status of external
+business applications and SaaS services. It supports multiple service types
+and status page formats.
+
+Supported Service Types:
+    - status_page: StatusPage.io format (Atlassian)
+    - Extensible architecture for additional types (Pingdom, custom APIs, etc.)
 
 Configuration:
     - Service definitions loaded from services.json
-    - Each service includes: name, URL, and other configuration
+    - Each service includes: name, type, URL, and other type-specific config
 
 Functions:
-    - check_status_page_service: Checks Atlassian Status Page.io API format
-    - check_service_status: Main function that checks service status
+    - check_status_page_service: Checks StatusPage.io API format
+    - check_service_status: Main dispatcher that routes to appropriate checker
 
 Incident Handling:
     - Filters incidents to only ACTIVE ones (excludes resolved/completed/postmortem)
@@ -25,11 +30,11 @@ Component Monitoring:
     - Non-operational components trigger alerts even without active incidents
     - Component names are included in alert details for better context
     - Partial outages (some components down) are detected and reported
-    - Component-level status is tracked in separate Prometheus gauge
+    - Component-level status is tracked in separate Prometheus gauge (bizapps_component_status)
     - Each component status is mapped: operational=1, degraded/outage=-1, maintenance=0
 
 Status Mapping:
-    Atlassian Status Page.io indicators mapped to numeric values:
+    StatusPage.io indicators mapped to numeric values:
     - 'none': 1 (All systems operational)
     - 'minor': -1 (Minor service outage / degraded)
     - 'major': -1 (Major service outage)
@@ -214,11 +219,21 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             logger.debug(f"Status page service {service_key}: Found {len(active_incidents)} active incident(s), {len(unique_incidents)} unique after deduplication")
             
             # Get all active incident names and affected components
+            # Extract base URL from service config to construct incident URLs if shortlink is missing
+            service_url = service_config.get('url', '')
+            base_url = service_url.replace('/api/v2/summary.json', '').rstrip('/') if service_url else ''
+            
             incident_details = []
             for inc in unique_incidents:
                 name = inc.get('name', 'Unnamed incident')
                 incident_id = inc.get('id', 'unknown')
                 shortlink = inc.get('shortlink', '')
+                
+                # If shortlink is missing, construct incident URL from base URL and incident ID
+                if not shortlink and base_url and incident_id != 'unknown':
+                    shortlink = f"{base_url}/incidents/{incident_id}"
+                    logger.debug(f"Status page service {service_key}: Constructed incident URL from ID: {shortlink}")
+                
                 started_at = inc.get('started_at') or inc.get('created_at', '')
                 updated_at = inc.get('updated_at', '')
                 impact = inc.get('impact', 'unknown')
@@ -373,12 +388,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'maintenance_metadata': maintenance_metadata,  # List of maintenance details with metadata
             'component_metadata': component_metadata  # List of component details with status
         }
-
+        
         # Save successful response to cache for fallback on future failures
         save_service_response(service_key, result)
         
         return result
-
+        
     except requests.exceptions.HTTPError as e:
         # HTTP errors (4xx, 5xx) - categorize for better tracking
         status_code = e.response.status_code if e.response is not None else 0

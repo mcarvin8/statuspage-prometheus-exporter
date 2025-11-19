@@ -21,8 +21,8 @@ for Grafana visualization and alerting on service disruptions.
 
 Service Configuration:
     - Service definitions are stored in services.json
-    - Supports Atlassian Status Page.io API format
-    - Extensible to support additional status page formats
+    - Supports statuspage.io API format
+    - Extensible to support additional service types
 
 Environment Variables:
     - METRICS_PORT: Prometheus metrics server port (default: 9001)
@@ -40,7 +40,7 @@ from service_monitor import monitor_services
 
 # Configure logging
 logging.basicConfig(
-    level=logging.DEBUG,
+    level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)

@@ -33,7 +33,6 @@ The metrics are designed for use in Grafana dashboards with:
     - Alert rules for service degradation/outages
     - Response time trend graphs
     - Detailed status tables showing current state and details
-    - Failure rate tracking and alerting
     - Incident drill-down with direct links and metadata
 """
 from prometheus_client import Gauge
