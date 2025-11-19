@@ -29,6 +29,39 @@ The exporter exposes the following Prometheus metrics:
 - `statuspage_component_status`: Individual component status
   - Labels: `service_name`, `component_name`
 
+## Metric Caching Strategy
+
+The exporter uses intelligent caching to minimize unnecessary Prometheus gauge updates and prevent alert churn. This ensures that gauges are only cleared and reset when there are actual changes to the monitored data.
+
+### Cached Metrics (Update Only on Change)
+
+The following metrics use cache comparison to avoid unnecessary updates:
+
+- **`statuspage_service_status`**: Only updates when the service status changes (operational/maintenance/incident transitions)
+- **`statuspage_incident_info`**: Only updates when incidents are added, removed, or their IDs change
+- **`statuspage_maintenance_info`**: Only updates when maintenance events are added, removed, or their IDs change
+- **`statuspage_component_status`**: Only updates when components are added, removed, or their status values change
+
+**How it works:**
+1. Before each status check, the exporter loads the previous cached state for each service
+2. After collecting current status data, it compares the current state with the cached state
+3. Gauges are only updated when differences are detected (new items, removed items, or status changes)
+4. If no cache exists (first run or cache cleared), all gauges update normally to establish the initial state
+5. Resolved incidents and completed maintenance events are cleared by setting their gauge values to 0 using cached metadata to match exact labels
+
+**Benefits:**
+- Prevents unnecessary Prometheus gauge writes on every check cycle
+- Reduces alert churn by avoiding gauge resets when data hasn't changed
+- Maintains metric continuity even when individual API requests fail (falls back to cached data)
+- Ensures accurate metrics by always updating on actual state changes
+
+### Non-Cached Metric (Always Updates)
+
+- **`statuspage_response_time_seconds`**: Always cleared and updated every run
+  - Response times are dynamic metrics used for performance trending
+  - This metric is not used for alerts, so frequent updates are acceptable
+  - Provides continuous tracking of API performance over time
+
 ## Configuration
 
 ### Service Configuration
@@ -136,36 +169,10 @@ The exporter performs status checks:
 - **Initial check**: Executes immediately on startup
 - **Scheduled checks**: Every 20 minutes via APScheduler
 
-You can modify the schedule by editing the cron trigger in `bizapps_monitoring.py`:
+You can modify the schedule by editing the cron trigger in `status_monitoring.py`:
 
 ```python
 CronTrigger(minute='*/20')  # Change to your desired interval
-```
-
-## Example Queries
-
-### Check service status
-
-```promql
-statuspage_service_status
-```
-
-### Find services with active incidents
-
-```promql
-statuspage_service_status == -1
-```
-
-### Get incident details
-
-```promql
-statuspage_incident_info
-```
-
-### Track response times
-
-```promql
-statuspage_response_time_seconds
 ```
 
 ## Requirements
@@ -174,5 +181,4 @@ statuspage_response_time_seconds
 - Dependencies:
   - `prometheus_client`
   - `requests`
-  - `apscheduler
-
+  - `apscheduler`
