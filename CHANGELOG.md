@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.0.0...v1.1.0) (2025-11-21)
+
+
+### Features
+
+* add configurable check interval env variable ([5b0fd6a](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/5b0fd6a9d418c6e64b3a0094aa6f6796195c03ff))
+
 ## 1.0.0 (2025-11-21)
 
 
