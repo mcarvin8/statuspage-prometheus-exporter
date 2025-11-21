@@ -79,6 +79,54 @@
       "tooltip": "",
       "type": "link",
       "url": "https://status.conga.com/"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Outreach Status",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://status.outreach.io/"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Chili Piper Status",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://status.chilipiper.com/"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Qualified Status",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://status.qualified.io/"
+    },
+    {
+      "asDropdown": false,
+      "icon": "external link",
+      "includeVars": false,
+      "keepTime": false,
+      "tags": [],
+      "targetBlank": true,
+      "title": "Gainsight Status",
+      "tooltip": "",
+      "type": "link",
+      "url": "https://status.gainsight.com/"
     }
   ],
   "panels": [
@@ -182,7 +230,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 8,
+        "h": 10,
         "w": 24,
         "x": 0,
         "y": 3
@@ -258,10 +306,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 14,
         "w": 12,
         "x": 0,
-        "y": 11
+        "y": 13
       },
       "id": 1,
       "interval": "1m",
@@ -331,10 +379,10 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 9,
+        "h": 14,
         "w": 12,
         "x": 12,
-        "y": 11
+        "y": 13
       },
       "id": 3,
       "interval": "20m",
@@ -381,7 +429,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 20
+        "y": 27
       },
       "id": 9,
       "panels": [
@@ -450,7 +498,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 21
+            "y": 28
           },
           "id": 12,
           "interval": "5m",
@@ -609,7 +657,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 53
+            "y": 52
           },
           "id": 11,
           "interval": "10m",
@@ -659,12 +707,16 @@
                     "aggregations": []
                   },
                   "affected_components": {
-                    "aggregations": [],
-                    "operation": "groupby"
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
                   },
                   "impact": {
-                    "aggregations": [],
-                    "operation": "groupby"
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
                   },
                   "incident_id": {
                     "aggregations": [],
@@ -677,6 +729,9 @@
                   "service_name": {
                     "aggregations": [],
                     "operation": "groupby"
+                  },
+                  "service_type": {
+                    "aggregations": []
                   },
                   "shortlink": {
                     "aggregations": [],
@@ -697,8 +752,8 @@
                 "excludeByName": {},
                 "includeByName": {},
                 "indexByName": {
-                  "affected_components": 6,
-                  "impact": 2,
+                  "affected_components (lastNotNull)": 6,
+                  "impact (lastNotNull)": 2,
                   "incident_id": 4,
                   "incident_name": 5,
                   "service_name": 0,
@@ -707,7 +762,9 @@
                 },
                 "renameByName": {
                   "affected_components": "Affected Components",
+                  "affected_components (lastNotNull)": "Affected Components",
                   "impact": "Impact",
+                  "impact (lastNotNull)": "Impact",
                   "incident_id": "Incident ID",
                   "incident_name": "Incident Name",
                   "service_name": "Application Name",
@@ -731,7 +788,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 21
+        "y": 28
       },
       "id": 8,
       "panels": [
@@ -800,7 +857,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 62
+            "y": 29
           },
           "id": 13,
           "interval": "5m",
@@ -971,7 +1028,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 70
+            "y": 37
           },
           "id": 7,
           "interval": "10m",
@@ -1018,8 +1075,10 @@
               "options": {
                 "fields": {
                   "affected_components": {
-                    "aggregations": [],
-                    "operation": "groupby"
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
                   },
                   "maintenance_id": {
                     "aggregations": [],
@@ -1045,6 +1104,9 @@
                     "aggregations": [],
                     "operation": "groupby"
                   },
+                  "service_type": {
+                    "aggregations": []
+                  },
                   "shortlink": {
                     "aggregations": [],
                     "operation": "groupby"
@@ -1068,6 +1130,7 @@
                 },
                 "renameByName": {
                   "affected_components": "Affected Components",
+                  "affected_components (lastNotNull)": "Affected Components",
                   "maintenance_id": "Maintenance ID",
                   "maintenance_name": "Maintenance Name",
                   "scheduled_end": "Scheduled End",
@@ -1093,7 +1156,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 22
+        "y": 29
       },
       "id": 15,
       "panels": [
@@ -1153,7 +1216,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 23
+            "y": 25
           },
           "id": 14,
           "interval": "5m",
@@ -1190,24 +1253,6 @@
           ],
           "title": "Application Component Status",
           "transformations": [
-            {
-              "id": "merge",
-              "options": {}
-            },
-            {
-              "id": "calculateField",
-              "options": {
-                "alias": "Value",
-                "mode": "reduceRow",
-                "reduce": {
-                  "include": [
-                    "Value #A",
-                    "Value #B"
-                  ],
-                  "reducer": "max"
-                }
-              }
-            },
             {
               "id": "organize",
               "options": {
