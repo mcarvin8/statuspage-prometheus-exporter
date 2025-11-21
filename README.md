@@ -90,17 +90,15 @@ Each service requires:
 
 ### Using the Published Docker Image
 
-The easiest way to use this exporter is with the published Docker image from Docker Hub:
+The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/repository/docker/mcarvin8/statuspage-prometheus-exporter):
 
 ```bash
 docker run -d \
   --name statuspage-exporter \
   -p 9001:9001 \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
-  yourusername/statuspage-prometheus-exporter:latest
+  mcarvin8/statuspage-prometheus-exporter:latest
 ```
-
-**Note**: Replace `yourusername/statuspage-prometheus-exporter` with the actual Docker Hub image name if published.
 
 ### Building the Docker Image Locally
 
@@ -123,69 +121,6 @@ docker run -d \
 ```
 
 **Important**: You must mount your own `services.json` file. The image includes a `services.json.example` file as a template, but you should create your own configuration file with the services you want to monitor.
-
-### Publishing to Docker Hub
-
-To publish this image to Docker Hub for wider distribution:
-
-1. **Create a Docker Hub account** and repository
-2. **Build and tag the image**:
-   ```bash
-   docker build -t yourusername/statuspage-prometheus-exporter -f docker/atlassian-statuspage-prom-exporter/Dockerfile .
-   ```
-3. **Login and push**:
-   ```bash
-   docker login
-   docker push yourusername/statuspage-prometheus-exporter:latest
-   ```
-
-For automated publishing with GitHub Actions, see [DOCKER_HUB.md](DOCKER_HUB.md) for detailed instructions.
-
-The repository includes a GitHub Actions workflow (`.github/workflows/docker-publish.yml`) that can automatically build and publish the image on pushes and tags.
-
-Or using Docker Compose:
-
-```yaml
-version: '3.8'
-services:
-  statuspage-exporter:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    ports:
-      - "9001:9001"
-    volumes:
-      - ./services.json:/app/statuspage-exporter/services.json
-    environment:
-      - METRICS_PORT=9001
-    restart: unless-stopped
-```
-
-### Docker Compose Example
-
-1. Create a `docker-compose.yml` file:
-
-```yaml
-version: '3.8'
-services:
-  statuspage-exporter:
-    build:
-      context: .
-      dockerfile: docker/Dockerfile
-    ports:
-      - "9001:9001"
-    volumes:
-      - ./services.json:/app/statuspage-exporter/services.json
-    environment:
-      - METRICS_PORT=9001
-    restart: unless-stopped
-```
-
-2. Start the service:
-
-```bash
-docker-compose up -d
-```
 
 ## Integration with Prometheus
 
