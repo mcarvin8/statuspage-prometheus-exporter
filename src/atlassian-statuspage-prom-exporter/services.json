@@ -38,5 +38,13 @@
   "netsuite": {
     "url": "https://status.netsuite.com/api/v2/summary.json",
     "name": "NetSuite"
+  },
+  "6sense": {
+    "url": "https://status.6sense.com/api/v2/summary.json",
+    "name": "6sense"
+  },
+  "fivetran": {
+    "url": "https://status.fivetran.com/api/v2/summary.json",
+    "name": "Fivetran"
   }
 }
