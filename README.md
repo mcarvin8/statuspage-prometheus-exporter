@@ -163,6 +163,31 @@ scrape_configs:
       - targets: ['statuspage-exporter:9001']
 ```
 
+### Prometheus Alerting Rules
+
+The exporter provides metrics that can be used to create Prometheus alerting rules for incidents, service status changes, and component degradation.
+
+An example PrometheusRule manifest is provided in `prometheus/prometheusrule-example.yaml` that demonstrates:
+
+- **Incident Alerts**: Alert when active incidents are detected for specific services
+- **Service Status Alerts**: Alert on service status changes (down, maintenance)
+- **Component Alerts**: Alert when individual components are degraded
+- **Performance Alerts**: Alert on slow API response times
+- **Generic Alerts**: Catch incidents across all monitored services
+
+The example includes:
+- Recording rules to aggregate incident metadata for easier alerting
+- Alert rules with configurable thresholds and durations
+- Template annotations with incident details (ID, name, impact, status page links)
+- Customizable labels for routing to notification channels
+
+To use the example:
+1. Copy `prometheus/prometheusrule-example.yaml` to your Prometheus configuration
+2. Update service names to match your `services.json` configuration
+3. Customize alert thresholds, durations, and notification channels
+4. Adjust metadata (namespace, labels) to match your Prometheus operator setup
+5. Apply the manifest: `kubectl apply -f prometheus/prometheusrule-example.yaml`
+
 ## Monitoring Schedule
 
 The exporter performs status checks:

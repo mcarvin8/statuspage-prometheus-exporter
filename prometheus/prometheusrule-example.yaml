@@ -1,0 +1,139 @@
+---
+# Example PrometheusRule manifest for StatusPage Prometheus Exporter
+# This is a template that can be customized for your organization's needs
+#
+# The exporter exposes the following metrics:
+# - statuspage_service_status: Service operational status (1=operational, 0=maintenance, -1=incident/down)
+# - statuspage_incident_info: Active incident metadata (value=1 when active, 0 when resolved)
+# - statuspage_maintenance_info: Active maintenance event metadata
+# - statuspage_component_status: Individual component status
+# - statuspage_response_time_seconds: API response time in seconds
+#
+# Customize this file by:
+# 1. Updating the metadata (name, namespace, labels) to match your Prometheus setup
+# 2. Replacing "Example Service" with your actual service names from services.json
+# 3. Adjusting alert thresholds, durations, and notification channels
+# 4. Adding or removing alert groups as needed for your services
+
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+
+metadata:
+  name: statuspage-exporter-alerting-rules
+  namespace: monitoring  # Change to your namespace
+  labels:
+    # Add labels required by your Prometheus operator configuration
+    # Example: prometheus: kube-prometheus
+    # Example: role: alert-rules
+
+spec:
+  groups:
+  # Example: Alert on incidents for a specific service
+  - name: example_service_incident_alerts
+    interval: 30s  # Optional: evaluation interval
+    rules:
+      # Recording rule to aggregate incident info for easier alerting
+      - record: example_service_incident_info
+        expr: max by (service_name, incident_id, incident_name, impact, shortlink, started_at) (
+          statuspage_incident_info{service_name="Example Service"} == 1
+        )
+      
+      # Alert when an incident is detected
+      - alert: ExampleServiceIncident
+        expr: example_service_incident_info > 0
+        for: 5m  # Wait 5 minutes before firing
+        keep_firing_for: 5m  # Keep firing for 5 minutes after condition clears
+        labels:
+          severity: warning
+          # Add custom labels for routing to notification channels
+          # Example: team: platform
+          # Example: notification_channel: "#alerts-example-service"
+        annotations:
+          summary: "{{ $labels.service_name }} Incident Detected"
+          description: |
+            {{ $labels.service_name }} is reporting an active incident.
+            
+            Incident ID: {{ $labels.incident_id }}
+            Incident Name: {{ $labels.incident_name }}
+            Impact: {{ $labels.impact }}
+            Started At: {{ $labels.started_at }}
+            Status Page: {{ $labels.shortlink }}
+          # Add links to your runbooks and dashboards
+          # runbook_url: "https://your-wiki.example.com/runbooks/statuspage-incidents"
+          # dashboard_url: "https://your-grafana.example.com/d/statuspage-dashboard"
+
+  # Example: Alert on service status (operational/maintenance/incident)
+  - name: example_service_status_alerts
+    rules:
+      - alert: ExampleServiceDown
+        expr: statuspage_service_status{service_name="Example Service"} == -1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.service_name }} is Down"
+          description: |
+            {{ $labels.service_name }} status page reports the service is down or has an active incident.
+            Check the status page for more details.
+
+      - alert: ExampleServiceMaintenance
+        expr: statuspage_service_status{service_name="Example Service"} == 0
+        for: 1m
+        labels:
+          severity: info
+        annotations:
+          summary: "{{ $labels.service_name }} is in Maintenance"
+          description: |
+            {{ $labels.service_name }} is currently in a maintenance window.
+            This is typically scheduled and expected.
+
+  # Example: Alert on degraded components
+  - name: example_service_component_alerts
+    rules:
+      - alert: ExampleServiceComponentDegraded
+        expr: statuspage_component_status{service_name="Example Service"} == -1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service_name }} Component {{ $labels.component_name }} is Degraded"
+          description: |
+            Component {{ $labels.component_name }} in {{ $labels.service_name }} is reporting a degraded or down status.
+
+  # Example: Alert on high response times
+  - name: example_service_performance_alerts
+    rules:
+      - alert: ExampleServiceSlowResponse
+        expr: statuspage_response_time_seconds{service_name="Example Service"} > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service_name }} Status Page API is Slow"
+          description: |
+            The status page API for {{ $labels.service_name }} is responding slowly.
+            Response time: {{ $value }}s
+
+  # Example: Generic alert for any service with incidents
+  # This can be used to catch incidents across all monitored services
+  - name: any_service_incident_alerts
+    rules:
+      - record: any_service_incident_info
+        expr: max by (service_name, incident_id, incident_name, impact, shortlink) (
+          statuspage_incident_info == 1
+        )
+      
+      - alert: AnyServiceIncident
+        expr: any_service_incident_info > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Incident Detected: {{ $labels.service_name }}"
+          description: |
+            An active incident has been detected for {{ $labels.service_name }}.
+            
+            Incident: {{ $labels.incident_name }}
+            Impact: {{ $labels.impact }}
+            Status Page: {{ $labels.shortlink }}
+
