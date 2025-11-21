@@ -12,7 +12,7 @@ Key Features:
     - Exposes Prometheus metrics for integration with monitoring stacks
 
 Monitoring Schedule:
-    - Status checks run every 20 minutes
+    - Status checks run on a configurable interval (default: 20 minutes)
     - Initial check executes on service startup
     - Uses APScheduler for reliable scheduling
 
@@ -26,6 +26,7 @@ Service Configuration:
 
 Environment Variables:
     - METRICS_PORT: Prometheus metrics server port (default: 9001)
+    - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20)
 
 Functions:
     - schedule_tasks: Configures APScheduler jobs
@@ -45,24 +46,25 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def schedule_tasks(scheduler):
+def schedule_tasks(scheduler, interval_minutes=20):
     """
     Schedule monitoring tasks using APScheduler.
     
     Args:
         scheduler: APScheduler BlockingScheduler instance
+        interval_minutes: Interval in minutes between status checks (default: 20)
     """
-    # Schedule status page monitoring every 20 minutes
+    # Schedule status page monitoring at the specified interval
     scheduler.add_job(
         monitor_services,
-        CronTrigger(minute='*/20'),
+        CronTrigger(minute=f'*/{interval_minutes}'),
         id='monitor_services',
         replace_existing=True,
         max_instances=1
     )
     
     logger.info("Scheduled tasks:")
-    logger.info("  - Status page services monitoring: Every 20 minutes")
+    logger.info(f"  - Status page services monitoring: Every {interval_minutes} minutes")
 
 def main():
     """
@@ -75,11 +77,15 @@ def main():
     start_http_server(metrics_port)
     logger.info(f"Prometheus metrics server started on port {metrics_port}")
     
+    # Get check interval from environment variable
+    check_interval = int(os.getenv('CHECK_INTERVAL_MINUTES', 20))
+    logger.info(f"Status check interval: {check_interval} minutes")
+    
     # Initialize scheduler
     scheduler = BlockingScheduler()
     
     # Schedule tasks
-    schedule_tasks(scheduler)
+    schedule_tasks(scheduler, check_interval)
     
     # Execute initial monitoring run
     # Pass is_initial_run=True to clear all gauges and remove stale data from previous pod instances

@@ -91,6 +91,7 @@ Each service requires:
 
 - `METRICS_PORT`: Port for Prometheus metrics server (default: `9001`)
 - `SERVICES_JSON_PATH`: Custom path to `services.json` file (default: `/app/statuspage-exporter/services.json`)
+- `CHECK_INTERVAL_MINUTES`: Interval in minutes between status checks (default: `20`)
 
 ## Docker Setup
 
@@ -105,6 +106,7 @@ docker run -d \
   --name statuspage-exporter \
   -p 9001:9001 \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  -e CHECK_INTERVAL_MINUTES=20 \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
@@ -149,12 +151,16 @@ To use the example:
 
 The exporter performs status checks:
 - **Initial check**: Executes immediately on startup
-- **Scheduled checks**: Every 20 minutes via APScheduler
+- **Scheduled checks**: Configurable interval via `CHECK_INTERVAL_MINUTES` environment variable (default: 20 minutes)
 
-You can modify the schedule by editing the cron trigger in `status_monitoring.py`:
+You can customize the check interval by setting the `CHECK_INTERVAL_MINUTES` environment variable:
 
-```python
-CronTrigger(minute='*/20')  # Change to your desired interval
+```bash
+# Run checks every 10 minutes
+export CHECK_INTERVAL_MINUTES=10
+
+# Run checks every 30 minutes
+export CHECK_INTERVAL_MINUTES=30
 ```
 
 ## Requirements
