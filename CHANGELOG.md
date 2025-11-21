@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.1.0...v1.1.1) (2025-11-21)
+
+
+### Bug Fixes
+
+* release note workflow to publish to docker hub ([2ae442e](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/2ae442e3b269dc4ced60740ec9d98461216a4a2a))
+
 ## [1.1.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.0.0...v1.1.0) (2025-11-21)
 
 
