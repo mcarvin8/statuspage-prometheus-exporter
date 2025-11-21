@@ -92,6 +92,8 @@ Each service requires:
 
 The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/repository/docker/mcarvin8/statuspage-prometheus-exporter):
 
+**Important**: You must mount your own `services.json` file. The image includes a `services.json.example` file as a template, but you should create your own configuration file with the services you want to monitor.
+
 ```bash
 docker run -d \
   --name statuspage-exporter \
@@ -99,28 +101,6 @@ docker run -d \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
-
-### Building the Docker Image Locally
-
-Build the Docker image from the project root:
-
-```bash
-docker build -t statuspage-prometheus-exporter -f docker/atlassian-statuspage-prom-exporter/Dockerfile .
-```
-
-### Running with Docker
-
-Run the container with your `services.json` configuration:
-
-```bash
-docker run -d \
-  --name statuspage-exporter \
-  -p 9001:9001 \
-  -v /path/to/services.json:/app/statuspage-exporter/services.json \
-  statuspage-prometheus-exporter
-```
-
-**Important**: You must mount your own `services.json` file. The image includes a `services.json.example` file as a template, but you should create your own configuration file with the services you want to monitor.
 
 ## Integration with Prometheus
 
