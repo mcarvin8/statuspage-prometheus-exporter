@@ -61,6 +61,11 @@ jobs:
           ref: ${{ steps.release.outputs.tag_name }}
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
+      - name: Set GITHUB_REF for metadata extraction
+        run: |
+          echo "GITHUB_REF=refs/tags/${{ steps.release.outputs.tag_name }}" >> $GITHUB_ENV
+        if: ${{ steps.release.outputs.release_created == 'true' }}
+
       - name: Verify tag is on main branch
         run: |
           TAG_NAME="${{ steps.release.outputs.tag_name }}"
@@ -84,32 +89,15 @@ jobs:
           password: ${{ secrets.DOCKER_PASSWORD }}
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - name: Extract version from tag
-        id: version
-        run: |
-          TAG_NAME="${{ steps.release.outputs.tag_name }}"
-          # Remove 'v' prefix if present (e.g., v1.2.3 -> 1.2.3)
-          VERSION="${TAG_NAME#v}"
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          # Extract major.minor (e.g., 1.2.3 -> 1.2)
-          MAJOR_MINOR=$(echo "$VERSION" | cut -d. -f1,2)
-          echo "major_minor=$MAJOR_MINOR" >> $GITHUB_OUTPUT
-          # Extract major (e.g., 1.2.3 -> 1)
-          MAJOR=$(echo "$VERSION" | cut -d. -f1)
-          echo "major=$MAJOR" >> $GITHUB_OUTPUT
-          echo "Tag: $TAG_NAME, Version: $VERSION, Major.Minor: $MAJOR_MINOR, Major: $MAJOR"
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=${{ steps.release.outputs.tag_name }}
-            type=raw,value=${{ steps.version.outputs.version }}
-            type=raw,value=${{ steps.version.outputs.major_minor }}
-            type=raw,value=${{ steps.version.outputs.major }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
             type=raw,value=latest
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
