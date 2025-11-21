@@ -82,8 +82,9 @@ def main():
     schedule_tasks(scheduler)
     
     # Execute initial monitoring run
+    # Pass is_initial_run=True to clear all gauges and remove stale data from previous pod instances
     logger.info("Executing initial monitoring run...")
-    monitor_services()
+    monitor_services(is_initial_run=True)
     
     # Start scheduler
     logger.info("Starting scheduler...")

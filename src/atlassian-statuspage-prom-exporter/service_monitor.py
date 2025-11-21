@@ -12,14 +12,17 @@ Functions:
 Process Flow:
     1. Iterate through all services defined in services.json and collect status check results
     2. For failed requests, attempt to load cached response data as fallback
-    3. Clear existing Prometheus gauge labels (response_time only - others updated selectively)
+    3. Clear existing Prometheus gauge labels:
+       - On initial run: Clear ALL gauges to remove stale data from previous pod instances
+       - On subsequent runs: Only clear response_time gauge (others updated selectively)
     4. Update all gauges with collected results
     5. For incident, maintenance, status, and component gauges: Only update when they change per service (prevents unnecessary updates)
     6. Response time gauge always updates (dynamic metric for trending)
     7. Failed checks are logged (check logs for failure details)
     
     Incident Gauge Strategy:
-    - Incident gauge is NOT cleared globally (unlike other gauges)
+    - Incident gauge is cleared on initial run only (to remove stale data from previous pods)
+    - On subsequent runs, incident gauge is NOT cleared globally
     - For each service, compare current incidents with cached incidents
     - Only update incident gauge when incidents have changed (added, removed, or updated)
     - Clear resolved incidents by setting them to 0 (using cached metadata to match labels)
@@ -27,7 +30,8 @@ Process Flow:
     - This prevents unnecessary gauge writes and alert churn while ensuring accuracy
     
     Maintenance Gauge Strategy:
-    - Maintenance gauge is NOT cleared globally (unlike other gauges)
+    - Maintenance gauge is cleared on initial run only (to remove stale data from previous pods)
+    - On subsequent runs, maintenance gauge is NOT cleared globally
     - For each service, compare current maintenance with cached maintenance
     - Only update maintenance gauge when maintenance has changed (added, removed, or updated)
     - Clear resolved maintenance by setting them to 0 (using cached metadata to match labels)
@@ -35,14 +39,16 @@ Process Flow:
     - This prevents unnecessary gauge writes and alert churn while ensuring accuracy
     
     Status Gauge Strategy:
-    - Status gauge is NOT cleared globally (unlike response_time gauge)
+    - Status gauge is cleared on initial run only (to remove stale data from previous pods)
+    - On subsequent runs, status gauge is NOT cleared globally (unlike response_time gauge)
     - For each service, compare current status with cached status
     - Only update status gauge when status has changed (operational/maintenance/incident transitions)
     - If no cache exists, update normally (first run or cache cleared)
     - This prevents unnecessary gauge writes while ensuring accuracy
     
     Component Status Gauge Strategy:
-    - Component status gauge is NOT cleared globally (unlike response_time gauge)
+    - Component status gauge is cleared on initial run only (to remove stale data from previous pods)
+    - On subsequent runs, component status gauge is NOT cleared globally (unlike response_time gauge)
     - For each service, compare current components with cached components
     - Only update component gauge when components have changed (added, removed, or status changed)
     - Clear removed components by setting them to 0 (using cached metadata to match labels)
@@ -107,10 +113,14 @@ def normalize_timestamp(timestamp_str):
     normalized = re.sub(r'\.\d{3}(?=[Z\+\-])', '', timestamp_str)
     return normalized
 
-def monitor_services():
+def monitor_services(is_initial_run=False):
     """
     Monitor all configured services and update Prometheus metrics.
-    
+
+    Args:
+        is_initial_run: If True, clears all gauges to remove stale data from previous pod instances.
+                       If False, only clears response_time gauge (others updated selectively).
+
     Process Flow:
     1. Collect status check results for all services first
     2. Clear existing Prometheus gauge labels to remove stale metrics
@@ -175,16 +185,25 @@ def monitor_services():
         else:
             logger.warning(f"{service_config['name']}: Check failed ({result.get('raw_status', 'unknown')}), no cached data available - {result.get('error', 'Unknown error')}")
     
-    # Step 2: Clear all existing gauge labels to remove stale metrics
+    # Step 2: Clear existing gauge labels to remove stale metrics
     # This happens right before updating, minimizing the empty window
-    # Note: statuspage_incident_info, statuspage_maintenance_info, statuspage_status_gauge, and statuspage_component_status
-    # are NOT cleared - updated selectively per service when they change
     logger.debug("Clearing existing gauge labels before updating with new data...")
-    # statuspage_status_gauge is NOT cleared - updated selectively per service
-    statuspage_response_time_gauge.clear()  # Response time always updates (dynamic metric)
-    # statuspage_incident_info is NOT cleared - updated selectively per service
-    # statuspage_maintenance_info is NOT cleared - updated selectively per service
-    # statuspage_component_status is NOT cleared - updated selectively per service
+    if is_initial_run:
+        # On initial run, clear ALL gauges to remove stale data from previous pod instances
+        logger.info("Initial run detected - clearing all gauges to remove stale data from previous pod instances")
+        statuspage_status_gauge.clear()
+        statuspage_response_time_gauge.clear()
+        statuspage_incident_info.clear()
+        statuspage_maintenance_info.clear()
+        statuspage_component_status.clear()
+    else:
+        # On subsequent runs, only clear response_time gauge (others updated selectively per service)
+        logger.debug("Clearing existing gauge labels before updating with new data...")
+        # statuspage_status_gauge is NOT cleared - updated selectively per service
+        statuspage_response_time_gauge.clear()  # Response time always updates (dynamic metric)
+        # statuspage_incident_info is NOT cleared - updated selectively per service
+        # statuspage_maintenance_info is NOT cleared - updated selectively per service
+        # statuspage_component_status is NOT cleared - updated selectively per service
     
     # Step 3: Update all gauges with collected results
     for item in results:
