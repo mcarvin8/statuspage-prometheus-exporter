@@ -240,7 +240,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
                 incident_status = inc.get('status', 'unknown')
                 
                 affected_comps = [c.get('name', '') for c in inc.get('components', [])]
-                
+
+                # Skip system metadata test incidents (e.g., "_system_metadata:...")
+                if name.startswith('_system_metadata:'):
+                    logger.debug(f"Status page service {service_key}: Skipping system metadata test incident: {incident_id} ({name[:50]}...)")
+                    continue
+
                 # Build metadata dict
                 metadata = {
                     'id': incident_id,
@@ -275,7 +280,7 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             logger.debug(f"Status page service {service_key}: Found {len(active_incidents)} active incident(s): {description}")
             logger.info(f"Status page service {service_key}: Returning {len(incident_metadata)} incident metadata records")
             
-            # Determine highest severity from all active incidents
+            # Determine highest severity from all active incidents (excluding system metadata tests)
             # Severity priority: critical > major > minor
             severity_priority = {
                 'critical': 3,
@@ -288,6 +293,11 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             highest_priority = 0
             
             for inc in active_incidents:
+                # Skip system metadata test incidents
+                inc_name = inc.get('name', 'Unnamed incident')
+                if inc_name.startswith('_system_metadata:'):
+                    continue
+
                 inc_impact = inc.get('impact', 'none').lower()
                 inc_priority = severity_priority.get(inc_impact, 0)
                 if inc_priority > highest_priority:

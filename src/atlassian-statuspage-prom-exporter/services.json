@@ -34,5 +34,9 @@
   "leandata": {
     "url": "https://status.leandata.com/api/v2/summary.json",
     "name": "LeanData"
+  },
+  "netsuite": {
+    "url": "https://status.netsuite.com/api/v2/summary.json",
+    "name": "NetSuite"
   }
 }
