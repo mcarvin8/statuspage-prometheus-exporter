@@ -72,13 +72,28 @@ import time
 from typing import Dict, Any
 from cache_manager import save_service_response
 
+logger = logging.getLogger(__name__)
+
 # Load services configuration
 import os
-config_path = os.path.join(os.path.dirname(__file__), 'services.json')
+# Allow services.json to be specified via environment variable (useful for Docker)
+config_path = os.getenv('SERVICES_JSON_PATH', os.path.join(os.path.dirname(__file__), 'services.json'))
+
+if not os.path.exists(config_path):
+    # Try services.json.example as fallback
+    example_path = os.path.join(os.path.dirname(__file__), 'services.json.example')
+    if os.path.exists(example_path):
+        logger.warning(f"services.json not found at {config_path}, using example file. Please mount your own services.json file.")
+        config_path = example_path
+    else:
+        raise FileNotFoundError(
+            f"services.json not found at {config_path}. "
+            "Please create a services.json file with your service configurations, "
+            "or mount it as a volume when running in Docker."
+        )
+
 with open(config_path, 'r') as f:
     SERVICES = json.load(f)
-
-logger = logging.getLogger(__name__)
 
 def create_retry_session(retries=3, backoff_factor=0.5, status_forcelist=(500, 502, 503, 504)):
     """

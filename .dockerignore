@@ -1,0 +1,47 @@
+# Git files
+.git
+.gitignore
+.gitattributes
+
+# Documentation
+README.md
+*.md
+
+# Python cache
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg
+*.egg-info
+dist
+build
+
+# IDE files
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# Cache files (users should mount their own or let it create fresh)
+cache/
+*.json
+
+# Docker files (don't copy docker directory into image)
+docker/
+
+# Examples and test files
+examples/
+prometheus/
+grafana/
+
+# CI/CD
+.github/
+
+# OS files
+.DS_Store
+Thumbs.db
+

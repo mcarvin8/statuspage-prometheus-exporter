@@ -84,15 +84,30 @@ Each service requires:
 ### Environment Variables
 
 - `METRICS_PORT`: Port for Prometheus metrics server (default: `9001`)
+- `SERVICES_JSON_PATH`: Custom path to `services.json` file (default: `/app/statuspage-exporter/services.json`)
 
 ## Docker Setup
 
-### Building the Docker Image
+### Using the Published Docker Image
+
+The easiest way to use this exporter is with the published Docker image from Docker Hub:
+
+```bash
+docker run -d \
+  --name statuspage-exporter \
+  -p 9001:9001 \
+  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  yourusername/statuspage-prometheus-exporter:latest
+```
+
+**Note**: Replace `yourusername/statuspage-prometheus-exporter` with the actual Docker Hub image name if published.
+
+### Building the Docker Image Locally
 
 Build the Docker image from the project root:
 
 ```bash
-docker build -t statuspage-prometheus-exporter -f docker/Dockerfile .
+docker build -t statuspage-prometheus-exporter -f docker/atlassian-statuspage-prom-exporter/Dockerfile .
 ```
 
 ### Running with Docker
@@ -106,6 +121,27 @@ docker run -d \
   -v /path/to/services.json:/app/statuspage-exporter/services.json \
   statuspage-prometheus-exporter
 ```
+
+**Important**: You must mount your own `services.json` file. The image includes a `services.json.example` file as a template, but you should create your own configuration file with the services you want to monitor.
+
+### Publishing to Docker Hub
+
+To publish this image to Docker Hub for wider distribution:
+
+1. **Create a Docker Hub account** and repository
+2. **Build and tag the image**:
+   ```bash
+   docker build -t yourusername/statuspage-prometheus-exporter -f docker/atlassian-statuspage-prom-exporter/Dockerfile .
+   ```
+3. **Login and push**:
+   ```bash
+   docker login
+   docker push yourusername/statuspage-prometheus-exporter:latest
+   ```
+
+For automated publishing with GitHub Actions, see [DOCKER_HUB.md](DOCKER_HUB.md) for detailed instructions.
+
+The repository includes a GitHub Actions workflow (`.github/workflows/docker-publish.yml`) that can automatically build and publish the image on pushes and tags.
 
 Or using Docker Compose:
 

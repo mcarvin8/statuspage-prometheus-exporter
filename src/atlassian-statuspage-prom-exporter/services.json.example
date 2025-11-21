@@ -1,0 +1,8 @@
+{
+  "_comment": "This is an example services.json file. Copy this to services.json and customize with your own services.",
+  "example_service": {
+    "url": "https://status.example.com/api/v2/summary.json",
+    "name": "Example Service"
+  }
+}
+
