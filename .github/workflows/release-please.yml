@@ -61,11 +61,6 @@ jobs:
           ref: ${{ steps.release.outputs.tag_name }}
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
-      - name: Set GITHUB_REF for metadata extraction
-        run: |
-          echo "GITHUB_REF=refs/tags/${{ steps.release.outputs.tag_name }}" >> $GITHUB_ENV
-        if: ${{ steps.release.outputs.release_created == 'true' }}
-
       - name: Verify tag is on main branch
         run: |
           TAG_NAME="${{ steps.release.outputs.tag_name }}"
@@ -95,9 +90,7 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
+            type=raw,value=${{ steps.release.outputs.tag_name }}
             type=raw,value=latest
         if: ${{ steps.release.outputs.release_created == 'true' }}
 
