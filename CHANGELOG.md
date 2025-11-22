@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.1.1...v1.2.0) (2025-11-22)
+
+
+### Features
+
+* add DEBUG environment variable for configurable logging level ([d4e3749](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/d4e3749074e6240ae25d648f10b966d2bdd97cea))
+
 ## [1.1.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.1.0...v1.1.1) (2025-11-21)
 
 
