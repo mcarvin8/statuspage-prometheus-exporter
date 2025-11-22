@@ -6,6 +6,23 @@
 
 A Prometheus exporter that monitors services using Atlassian StatusPage.io status pages. This exporter periodically checks status page APIs to track service health, incidents, and maintenance windows, exposing metrics for integration with Prometheus and Grafana.
 
+## Table of Contents
+
+- [Features](#features)
+- [Metrics Exposed](#metrics-exposed)
+- [Metric Caching Strategy](#metric-caching-strategy)
+  - [Cached Metrics (Update Only on Change)](#cached-metrics-update-only-on-change)
+  - [Non-Cached Metric (Always Updates)](#non-cached-metric-always-updates)
+- [Configuration](#configuration)
+  - [Service Configuration](#service-configuration)
+  - [Environment Variables](#environment-variables)
+- [Docker Setup](#docker-setup)
+  - [Using the Published Docker Image](#using-the-published-docker-image)
+- [Integration with Prometheus](#integration-with-prometheus)
+  - [Prometheus Alerting Rules](#prometheus-alerting-rules)
+- [Monitoring Schedule](#monitoring-schedule)
+- [Requirements](#requirements)
+
 ## Features
 
 - **Status Monitoring**: Tracks operational status of services using Atlassian Status Page.io format
@@ -90,6 +107,7 @@ Each service requires:
 - `METRICS_PORT`: Port for Prometheus metrics server (default: `9001`)
 - `SERVICES_JSON_PATH`: Custom path to `services.json` file (default: `/app/statuspage-exporter/services.json`)
 - `CHECK_INTERVAL_MINUTES`: Interval in minutes between status checks (default: `20`)
+- `DEBUG`: Enable debug logging (set to `true` to enable, default: `false`/INFO level)
 
 ## Docker Setup
 
@@ -97,7 +115,21 @@ Each service requires:
 
 The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/repository/docker/mcarvin8/statuspage-prometheus-exporter):
 
-**Important**: You must mount your own `services.json` file. The image includes a `services.json.example` file as a template, but you should create your own configuration file with the services you want to monitor.
+**Required**: You **must** mount your own `services.json` file for the exporter to work. The image includes a `services.json.example` file as a template, but you must create your own configuration file with the services you want to monitor.
+
+**Optional**: Environment variables can be set to customize behavior. See the [Environment Variables](#environment-variables) section above for available options and their defaults.
+
+#### Minimal Required Setup
+
+```bash
+docker run -d \
+  --name statuspage-exporter \
+  -p 9001:9001 \
+  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  mcarvin8/statuspage-prometheus-exporter:latest
+```
+
+#### With Optional Environment Variables
 
 ```bash
 docker run -d \
@@ -105,6 +137,7 @@ docker run -d \
   -p 9001:9001 \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
   -e CHECK_INTERVAL_MINUTES=20 \
+  -e DEBUG=true \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 

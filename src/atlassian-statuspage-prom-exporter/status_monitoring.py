@@ -27,6 +27,7 @@ Service Configuration:
 Environment Variables:
     - METRICS_PORT: Prometheus metrics server port (default: 9001)
     - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20)
+    - DEBUG: Enable debug logging (set to 'true' to enable, default: false/INFO level)
 
 Functions:
     - schedule_tasks: Configures APScheduler jobs
@@ -39,9 +40,11 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from service_monitor import monitor_services
 
-# Configure logging
+# Configure logging based on DEBUG environment variable
+debug_enabled = os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes', 'on')
+log_level = logging.DEBUG if debug_enabled else logging.INFO
 logging.basicConfig(
-    level=logging.INFO,
+    level=log_level,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
@@ -71,6 +74,11 @@ def main():
     Main entry point for the monitoring service.
     """
     logger.info("Starting Atlassian Status Page Prometheus Exporter...")
+    
+    # Log debug status
+    debug_enabled = os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes', 'on')
+    log_level_name = "DEBUG" if debug_enabled else "INFO"
+    logger.info(f"Logging level: {log_level_name}")
     
     # Start Prometheus metrics server
     metrics_port = int(os.getenv('METRICS_PORT', 9001))
