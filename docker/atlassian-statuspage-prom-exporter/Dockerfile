@@ -7,11 +7,6 @@ WORKDIR /app/statuspage-exporter
 COPY src/atlassian-statuspage-prom-exporter/*.py /app/statuspage-exporter/
 COPY src/atlassian-statuspage-prom-exporter/services.json.example /app/statuspage-exporter/services.json.example
 
-# Copy documentation, license, and version
-COPY README.md /app/statuspage-exporter/README.md
-COPY LICENSE.md /app/statuspage-exporter/LICENSE.md
-COPY version.txt /app/statuspage-exporter/version.txt
-
 # Create cache directory (will be used if not mounted)
 RUN mkdir -p /app/statuspage-exporter/cache
 
