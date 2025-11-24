@@ -26,7 +26,7 @@ Metrics:
 
     - statuspage_component_status: Individual component status
         Labels: service_name, component_name
-        Values: 1 (operational), 0 (maintenance), -1 (degraded/down)
+        Values: 1 (operational), -1 (degraded/down/unknown)
 
 The metrics are designed for use in Grafana dashboards with:
     - Status indicator panels
@@ -71,6 +71,6 @@ statuspage_maintenance_info = Gauge(
 # Component status gauge
 statuspage_component_status = Gauge(
     'statuspage_component_status',
-    'Status of individual service components (1=operational, 0=maintenance, -1=degraded/down)',
+    'Status of individual service components (1=operational, -1=degraded/down/unknown)',
     ['service_name', 'component_name']
 )

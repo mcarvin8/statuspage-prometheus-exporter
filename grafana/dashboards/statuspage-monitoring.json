@@ -1182,11 +1182,6 @@
               "mappings": [
                 {
                   "options": {
-                    "0": {
-                      "color": "yellow",
-                      "index": 1,
-                      "text": "Maintenance"
-                    },
                     "1": {
                       "color": "green",
                       "index": 0,
@@ -1194,7 +1189,7 @@
                     },
                     "-1": {
                       "color": "red",
-                      "index": 2,
+                      "index": 1,
                       "text": "Degraded"
                     }
                   },

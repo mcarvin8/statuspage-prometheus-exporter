@@ -77,7 +77,7 @@ Metrics Updated:
         Only updated when incidents change per service to prevent unnecessary updates
     - statuspage_maintenance_info: Active maintenance metadata (ID, name, schedule, shortlink, etc.)
         Only updated when maintenance changes per service to prevent unnecessary updates
-    - statuspage_component_status: Individual component status (1=operational, 0=maintenance, -1=degraded/down)
+    - statuspage_component_status: Individual component status (1=operational, -1=degraded/down/unknown)
         Only updated when components change per service to prevent unnecessary updates
 
 The orchestration ensures consistent metric labels and handles both successful

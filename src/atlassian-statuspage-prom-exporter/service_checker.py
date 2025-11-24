@@ -30,8 +30,8 @@ Component Monitoring:
     - Non-operational components trigger alerts even without active incidents
     - Component names are included in alert details for better context
     - Partial outages (some components down) are detected and reported
-    - Component-level status is tracked in separate Prometheus gauge (bizapps_component_status)
-    - Each component status is mapped: operational=1, degraded/outage=-1, maintenance=0
+    - Component-level status is tracked in separate Prometheus gauge (statuspage_component_status)
+    - Each component status is mapped: operational=1, degraded/outage=-1, unknown=-1
 
 Status Mapping:
     StatusPage.io indicators mapped to numeric values:
@@ -171,15 +171,13 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             component_status = comp.get('status', 'unknown').lower()
             
             # Map component status to numeric value
-            # StatusPage.io component statuses: operational, degraded, partial_outage, major_outage, under_maintenance
+            # StatusPage.io component statuses: operational, degraded_performance, partial_outage, major_outage
             if component_status == 'operational':
                 status_value = 1
-            elif component_status in ['degraded', 'partial_outage', 'major_outage', 'degraded_performance']:
+            elif component_status in ['degraded_performance', 'partial_outage', 'major_outage']:
                 status_value = -1
-            elif component_status in ['under_maintenance', 'maintenance']:
-                status_value = 0
             else:
-                status_value = 0  # Unknown status defaults to 0
+                status_value = -1  # Unknown status defaults to -1 (treat as degraded/down)
             
             component_metadata.append({
                 'name': component_name,
