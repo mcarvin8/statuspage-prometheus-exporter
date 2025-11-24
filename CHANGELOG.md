@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.2.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.0...v1.2.1) (2025-11-24)
+
+
+### Bug Fixes
+
+* correct component status mapping for StatusPage.io API ([760143a](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/760143af38d946ce9c41f63e34b455f94631cb9d))
+* remove maintenance from StatusPage.io top-level status indicator ([a39f8c3](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/a39f8c3a9f0e7309973480f7c2d8c33fd8598f68))
+
 ## [1.2.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.1.1...v1.2.0) (2025-11-22)
 
 
