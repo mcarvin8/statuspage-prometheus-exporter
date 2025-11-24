@@ -39,11 +39,10 @@ Status Mapping:
     - 'minor': -1 (Minor service outage / degraded)
     - 'major': -1 (Major service outage)
     - 'critical': -1 (Critical service outage)
-    - 'maintenance': 0 (Scheduled maintenance)
 
 Return Format:
     All check functions return a dictionary with:
-    - status: Numeric status value (1=operational, 0=maintenance, -1=incident, None=check failed)
+    - status: Numeric status value (1=operational, -1=incident/unknown, None=check failed)
     - response_time: API response time in seconds
     - raw_status: Raw status indicator from API
     - status_text: Human-readable status text
@@ -381,19 +380,17 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'none': 1,           # All systems operational
             'minor': -1,         # Minor service outage/degradation
             'major': -1,         # Major service outage
-            'critical': -1,      # Critical service outage
-            'maintenance': 0     # Maintenance mode
+            'critical': -1       # Critical service outage
         }
         
-        status_value = status_mapping.get(indicator.lower(), 0)
+        status_value = status_mapping.get(indicator.lower(), -1)  # Unknown status defaults to -1
         
         # Determine status text based on indicator
         status_text_mapping = {
             'none': 'Operational',
             'minor': 'Minor Outage',
             'major': 'Major Outage',
-            'critical': 'Critical Outage',
-            'maintenance': 'Maintenance'
+            'critical': 'Critical Outage'
         }
         
         status_text = status_text_mapping.get(indicator.lower(), 'Unknown')
