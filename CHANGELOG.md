@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.1...v1.2.2) (2025-11-24)
+
+
+### Bug Fixes
+
+* remove doc copy steps in docker build ([8339716](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/833971655d79d8264244d92b6ab191bd1756b79a))
+
 ## [1.2.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.0...v1.2.1) (2025-11-24)
 
 
