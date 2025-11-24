@@ -68,7 +68,7 @@ Process Flow:
     - This ensures continuity of monitoring even when individual requests fail
 
 Metrics Updated:
-    - statuspage_status_gauge: Service health status (-1=incident, 0=maintenance, 1=operational)
+    - statuspage_status_gauge: Service health status (-1=incident, 1=operational)
         Simplified to just service_name and status value - incident details in statuspage_incident_info
         Only updated when status changes per service to prevent unnecessary updates
     - statuspage_response_time_gauge: API response time in seconds

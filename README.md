@@ -35,7 +35,7 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
 
 The exporter exposes the following Prometheus metrics:
 
-- `statuspage_service_status`: Service operational status (1=operational, 0=maintenance, -1=incident/down)
+- `statuspage_service_status`: Service operational status (1=operational, -1=incident/down)
   - Labels: `service_name`
   
 - `statuspage_response_time_seconds`: API response time in seconds
@@ -58,7 +58,7 @@ The exporter uses intelligent caching to minimize unnecessary Prometheus gauge u
 
 The following metrics use cache comparison to avoid unnecessary updates:
 
-- **`statuspage_service_status`**: Only updates when the service status changes (operational/maintenance/incident transitions)
+- **`statuspage_service_status`**: Only updates when the service status changes (operational/incident transitions)
 - **`statuspage_incident_info`**: Only updates when incidents are added, removed, or their IDs change
 - **`statuspage_maintenance_info`**: Only updates when maintenance events are added, removed, or their IDs change
 - **`statuspage_component_status`**: Only updates when components are added, removed, or their status values change
