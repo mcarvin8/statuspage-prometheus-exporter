@@ -60,6 +60,27 @@ Process Flow:
     - Response times are dynamic and should be tracked continuously for performance trending
     - This metric is not used for alerts, so frequent updates are acceptable
     
+    Probe Check Gauge Strategy:
+    - Probe check gauge is cleared and updated every run (like response_time)
+    - Indicates whether the current probe query succeeded (1=success, 0=failed)
+    - Updated even when using cached data (shows 0 if current probe failed, even with cache)
+    - This is a dynamic metric that should reflect the current probe status
+    
+    Application Timestamp Gauge Strategy:
+    - Application timestamp gauge is cleared on initial run only
+    - On subsequent runs, NOT cleared globally (like statuspage_status_gauge)
+    - Only updated when application status changes
+    - Tracks when the overall application status was last updated
+    - Stored in Unix epoch milliseconds for better Grafana compatibility
+    
+    Component Timestamp Gauge Strategy:
+    - Component timestamp gauge is cleared on initial run only
+    - On subsequent runs, NOT cleared globally (like statuspage_component_status)
+    - Only updated when components change (added, removed, or status changed)
+    - Set to 0 when components are removed
+    - Tracks when each component was last updated
+    - Stored in Unix epoch milliseconds for better Grafana compatibility
+    
     Cache Fallback Strategy:
     - When an API request fails, the service attempts to load the last successful
       response from cache
@@ -79,6 +100,16 @@ Metrics Updated:
         Only updated when maintenance changes per service to prevent unnecessary updates
     - statuspage_component_status: Individual component status (1=operational, -1=degraded/down/unknown)
         Only updated when components change per service to prevent unnecessary updates
+    - statuspage_component_timestamp: Last update timestamp of component in Unix epoch milliseconds
+        Only updated when components change per service to prevent unnecessary updates
+        Set to 0 when components are removed
+        Milliseconds format provides better Grafana compatibility
+    - statuspage_probe_check: Whether the current probe query was successful (1=success, 0=failed)
+        Always updated and cleared every run (dynamic metric like response_time)
+        Shows current probe status even when using cached data for other metrics
+    - statuspage_application_timestamp: Timestamp of last update of overall application status in Unix epoch milliseconds
+        Only updated when application status changes per service to prevent unnecessary updates
+        Milliseconds format provides better Grafana compatibility
 
 The orchestration ensures consistent metric labels and handles both successful
 and failed status checks gracefully. Failed checks fall back to cached data when
@@ -86,10 +117,13 @@ available, preventing alert churn from transient failures.
 """
 import logging
 import re
+import time
 from service_checker import SERVICES, check_service_status
 from gauges import (statuspage_status_gauge, statuspage_response_time_gauge, 
                     statuspage_incident_info,
-                    statuspage_maintenance_info, statuspage_component_status)
+                    statuspage_maintenance_info, statuspage_component_status,
+                    statuspage_component_timestamp, statuspage_probe_check,
+                    statuspage_application_timestamp)
 from cache_manager import load_service_response
 
 logger = logging.getLogger(__name__)
@@ -196,14 +230,20 @@ def monitor_services(is_initial_run=False):
         statuspage_incident_info.clear()
         statuspage_maintenance_info.clear()
         statuspage_component_status.clear()
+        statuspage_component_timestamp.clear()
+        statuspage_probe_check.clear()
+        statuspage_application_timestamp.clear()
     else:
-        # On subsequent runs, only clear response_time gauge (others updated selectively per service)
+        # On subsequent runs, only clear response_time and probe_check gauges (others updated selectively per service)
         logger.debug("Clearing existing gauge labels before updating with new data...")
         # statuspage_status_gauge is NOT cleared - updated selectively per service
         statuspage_response_time_gauge.clear()  # Response time always updates (dynamic metric)
+        statuspage_probe_check.clear()  # Probe check always updates (dynamic metric)
         # statuspage_incident_info is NOT cleared - updated selectively per service
         # statuspage_maintenance_info is NOT cleared - updated selectively per service
         # statuspage_component_status is NOT cleared - updated selectively per service
+        # statuspage_component_timestamp is NOT cleared - updated selectively per service
+        # statuspage_application_timestamp is NOT cleared - updated selectively per service
     
     # Step 3: Update all gauges with collected results
     for item in results:
@@ -219,7 +259,14 @@ def monitor_services(is_initial_run=False):
         from_cache = result.get('from_cache', False)
         logger.debug(f"Updating gauge for {service_name}: status={status_value} ({status_text}), details='{details}', from_cache={from_cache}")
         
-        # Only update gauges if status check succeeded or returned a valid status
+        # Update probe check gauge - always update to reflect current probe status
+        # This shows whether the current probe succeeded, even if we're using cached data
+        probe_success = 1 if result['success'] else 0
+        statuspage_probe_check.labels(
+            service_name=service_name
+        ).set(probe_success)
+        
+        # Only update other gauges if status check succeeded or returned a valid status
         # Skip gauge updates for HTTPS request failures (status=None)
         if status_value is not None:
             # Update response time gauge - always update (dynamic metric)
@@ -254,7 +301,15 @@ def monitor_services(is_initial_run=False):
                 statuspage_status_gauge.labels(
                     service_name=service_name
                 ).set(status_value)
-                logger.debug(f"{service_name}: Updated status gauge to {status_value}")
+                
+                # Update application timestamp when status changes
+                # Use milliseconds for better Grafana compatibility
+                current_timestamp = int(time.time() * 1000)
+                statuspage_application_timestamp.labels(
+                    service_name=service_name
+                ).set(current_timestamp)
+                
+                logger.debug(f"{service_name}: Updated status gauge to {status_value} and application timestamp to {current_timestamp}")
             else:
                 logger.debug(f"{service_name}: Status unchanged ({status_value}) - skipping status gauge update")
             
@@ -561,7 +616,14 @@ def monitor_services(is_initial_run=False):
                                 service_name=service_name,
                                 component_name=removed_name
                             ).set(0)  # Set removed components to 0
-                            logger.debug(f"{service_name}: Set removed component {removed_name} to 0")
+                            
+                            # Clear component timestamp for removed components (set to 0)
+                            statuspage_component_timestamp.labels(
+                                service_name=service_name,
+                                component_name=removed_name
+                            ).set(0)
+                            
+                            logger.debug(f"{service_name}: Set removed component {removed_name} to 0 and cleared timestamp")
                 
                 # Update current components
                 if component_metadata:
@@ -580,7 +642,15 @@ def monitor_services(is_initial_run=False):
                             component_name=component_name
                         ).set(component_status_value)
                         
-                        logger.debug(f"{service_name}: Set statuspage_component_status gauge to {component_status_value} for component '{component_name}'")
+                        # Update component timestamp when component is updated
+                        # Use milliseconds for better Grafana compatibility
+                        current_timestamp = int(time.time() * 1000)
+                        statuspage_component_timestamp.labels(
+                            service_name=service_name,
+                            component_name=component_name
+                        ).set(current_timestamp)
+                        
+                        logger.debug(f"{service_name}: Set statuspage_component_status gauge to {component_status_value} and component timestamp to {current_timestamp} for component '{component_name}'")
                     
                     logger.info(f"{service_config['name']}: {len(component_metadata)} component(s) tracked in component_status gauge")
                 else:

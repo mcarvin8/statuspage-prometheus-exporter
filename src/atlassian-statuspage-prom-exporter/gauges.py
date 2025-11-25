@@ -27,6 +27,18 @@ Metrics:
     - statuspage_component_status: Individual component status
         Labels: service_name, component_name
         Values: 1 (operational), -1 (degraded/down/unknown)
+    
+    - statuspage_component_timestamp: Last update timestamp of component
+        Labels: service_name, component_name
+        Values: Unix timestamp in milliseconds
+    
+    - statuspage_probe_check: Whether all queries on the application were successful
+        Labels: service_name
+        Values: 1 (all successful), 0 (at least one failed)
+    
+    - statuspage_application_timestamp: Timestamp of last update of overall application status
+        Labels: service_name
+        Values: Unix timestamp in milliseconds
 
 The metrics are designed for use in Grafana dashboards with:
     - Status indicator panels
@@ -73,4 +85,25 @@ statuspage_component_status = Gauge(
     'statuspage_component_status',
     'Status of individual service components (1=operational, -1=degraded/down/unknown)',
     ['service_name', 'component_name']
+)
+
+# Component timestamp gauge
+statuspage_component_timestamp = Gauge(
+    'statuspage_component_timestamp',
+    'Last update timestamp of component in Unix epoch milliseconds',
+    ['service_name', 'component_name']
+)
+
+# Probe check gauge
+statuspage_probe_check = Gauge(
+    'statuspage_probe_check',
+    'Whether all queries on the application were successful (1=all successful, 0=at least one failed)',
+    ['service_name']
+)
+
+# Application timestamp gauge
+statuspage_application_timestamp = Gauge(
+    'statuspage_application_timestamp',
+    'Timestamp of last update of overall application status in Unix epoch milliseconds',
+    ['service_name']
 )

@@ -49,6 +49,18 @@ The exporter exposes the following Prometheus metrics:
 
 - `statuspage_component_status`: Individual component status
   - Labels: `service_name`, `component_name`
+  
+- `statuspage_component_timestamp`: Last update timestamp of component
+  - Labels: `service_name`, `component_name`
+  - Values: Unix timestamp in milliseconds (for better Grafana compatibility)
+  
+- `statuspage_probe_check`: Whether all queries on the application were successful
+  - Labels: `service_name`
+  - Values: 1 (all successful), 0 (at least one failed)
+  
+- `statuspage_application_timestamp`: Timestamp of last update of overall application status
+  - Labels: `service_name`
+  - Values: Unix timestamp in milliseconds (for better Grafana compatibility)
 
 ## Metric Caching Strategy
 
