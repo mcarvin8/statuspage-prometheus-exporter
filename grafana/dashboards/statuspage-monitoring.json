@@ -19,116 +19,7 @@
   "fiscalYearStartMonth": 0,
   "graphTooltip": 0,
   "id": 5314,
-  "links": [
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Gong Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.gong.io/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Madkudu Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.madkudu.com/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "CyberSource Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.cybersource.com/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "DocuSign Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://www.docusign.com/trust/alerts"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Conga Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.conga.com/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Outreach Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.outreach.io/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Chili Piper Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.chilipiper.com/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Qualified Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.qualified.io/"
-    },
-    {
-      "asDropdown": false,
-      "icon": "external link",
-      "includeVars": false,
-      "keepTime": false,
-      "tags": [],
-      "targetBlank": true,
-      "title": "Gainsight Status",
-      "tooltip": "",
-      "type": "link",
-      "url": "https://status.gainsight.com/"
-    }
-  ],
+  "links": [],
   "panels": [
     {
       "fieldConfig": {
@@ -213,7 +104,10 @@
               "mode": "off"
             }
           },
+          "decimals": 0,
           "mappings": [],
+          "max": 1,
+          "min": -1,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -230,7 +124,7 @@
         "overrides": []
       },
       "gridPos": {
-        "h": 10,
+        "h": 8,
         "w": 24,
         "x": 0,
         "y": 3
@@ -275,133 +169,93 @@
         "type": "prometheus",
         "uid": "cip-o11y-aws-prd-us-west-2-theta"
       },
-      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Maintenance</li>\n    <li><code>-1</code> = Degraded (Incident)</li>\n  </ul>\n</div>",
       "fieldConfig": {
         "defaults": {
           "color": {
             "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "color-text"
+            },
+            "inspect": false
           },
           "mappings": [],
           "thresholds": {
             "mode": "absolute",
             "steps": [
               {
-                "color": "yellow"
-              },
-              {
-                "color": "red",
-                "value": -1
-              },
-              {
-                "color": "#EAB839",
-                "value": 0
-              },
-              {
-                "color": "green",
-                "value": 1
-              }
-            ]
-          }
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 0,
-        "y": 13
-      },
-      "id": 1,
-      "interval": "1m",
-      "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
-          "fields": "",
-          "values": false
-        },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
-      },
-      "pluginVersion": "12.0.5",
-      "targets": [
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "cip-o11y-aws-prd-us-west-2-theta"
-          },
-          "editorMode": "code",
-          "exemplar": false,
-          "expr": "statuspage_service_status",
-          "instant": true,
-          "legendFormat": "{{service_name}}",
-          "range": false,
-          "refId": "A"
-        }
-      ],
-      "title": "Application Status",
-      "transparent": true,
-      "type": "stat"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "cip-o11y-aws-prd-us-west-2-theta"
-      },
-      "description": "",
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "mode": "thresholds"
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "green"
+                "color": "text"
               },
               {
                 "color": "red",
                 "value": 80
               }
             ]
-          },
-          "unit": "s"
+          }
         },
-        "overrides": []
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Response Time"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "s"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Application Status"
+            },
+            "properties": [
+              {
+                "id": "mappings",
+                "value": [
+                  {
+                    "options": {
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Operational"
+                      },
+                      "-1": {
+                        "color": "red",
+                        "index": 1,
+                        "text": "Degraded"
+                      }
+                    },
+                    "type": "value"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
       },
       "gridPos": {
-        "h": 14,
-        "w": 12,
-        "x": 12,
-        "y": 13
+        "h": 13,
+        "w": 24,
+        "x": 0,
+        "y": 11
       },
-      "id": 3,
-      "interval": "20m",
+      "id": 16,
       "options": {
-        "colorMode": "value",
-        "graphMode": "area",
-        "justifyMode": "auto",
-        "orientation": "horizontal",
-        "percentChangeColorMode": "standard",
-        "reduceOptions": {
-          "calcs": [
-            "lastNotNull"
-          ],
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
           "fields": "",
-          "values": false
+          "reducer": [
+            "sum"
+          ],
+          "show": false
         },
-        "showPercentChange": false,
-        "textMode": "auto",
-        "wideLayout": true
+        "showHeader": true
       },
       "pluginVersion": "12.0.5",
       "targets": [
@@ -412,16 +266,54 @@
           },
           "editorMode": "code",
           "exemplar": false,
-          "expr": "statuspage_response_time_seconds",
+          "expr": "max by (service_name) (statuspage_service_status)",
+          "format": "table",
           "instant": true,
-          "legendFormat": "{{service_name}}",
+          "legendFormat": "__auto",
           "range": false,
           "refId": "A"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "editorMode": "code",
+          "exemplar": false,
+          "expr": "max by (service_name) (statuspage_response_time_seconds)",
+          "format": "table",
+          "hide": false,
+          "instant": true,
+          "legendFormat": "__auto",
+          "range": false,
+          "refId": "B"
         }
       ],
-      "title": "Application Response Time",
+      "title": "",
+      "transformations": [
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Time": true
+            },
+            "includeByName": {},
+            "indexByName": {},
+            "renameByName": {
+              "Time": "",
+              "Value #A": "Application Status",
+              "Value #B": "Response Time",
+              "service_name": "Application Name"
+            }
+          }
+        }
+      ],
       "transparent": true,
-      "type": "stat"
+      "type": "table"
     },
     {
       "collapsed": true,
@@ -429,7 +321,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 27
+        "y": 24
       },
       "id": 9,
       "panels": [
@@ -477,6 +369,7 @@
                   "mode": "off"
                 }
               },
+              "decimals": 0,
               "mappings": [],
               "min": 0,
               "thresholds": {
@@ -498,7 +391,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 28
+            "y": 25
           },
           "id": 12,
           "interval": "5m",
@@ -657,7 +550,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 52
+            "y": 33
           },
           "id": 11,
           "interval": "10m",
@@ -788,7 +681,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 28
+        "y": 25
       },
       "id": 8,
       "panels": [
@@ -836,6 +729,7 @@
                   "mode": "off"
                 }
               },
+              "decimals": 0,
               "mappings": [],
               "min": 0,
               "thresholds": {
@@ -857,7 +751,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 29
+            "y": 176
           },
           "id": 13,
           "interval": "5m",
@@ -1028,7 +922,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 37
+            "y": 184
           },
           "id": 7,
           "interval": "10m",
@@ -1156,7 +1050,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 29
+        "y": 26
       },
       "id": 15,
       "panels": [
@@ -1211,7 +1105,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 25
+            "y": 244
           },
           "id": 14,
           "interval": "5m",
