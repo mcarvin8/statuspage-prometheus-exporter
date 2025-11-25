@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.2...v1.3.0) (2025-11-25)
+
+
+### Features
+
+* add component timestamp, probe check, and application timestamp gauges ([e2fbb66](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/e2fbb66ead98ba75009a9a0d4296a593beac9229))
+
 ## [1.2.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.1...v1.2.2) (2025-11-24)
 
 
