@@ -65,7 +65,7 @@
         "type": "prometheus",
         "uid": "cip-o11y-aws-prd-us-west-2-theta"
       },
-      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Maintenance</li>\n    <li><code>-1</code> = Degraded (Incident)</li>\n  </ul>\n</div>",
+      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Degraded</li>\n  </ul>\n</div>",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -107,7 +107,7 @@
           "decimals": 0,
           "mappings": [],
           "max": 1,
-          "min": -1,
+          "min": 0,
           "thresholds": {
             "mode": "absolute",
             "steps": [
@@ -224,7 +224,7 @@
                         "index": 0,
                         "text": "Operational"
                       },
-                      "-1": {
+                      "0": {
                         "color": "red",
                         "index": 1,
                         "text": "Degraded"

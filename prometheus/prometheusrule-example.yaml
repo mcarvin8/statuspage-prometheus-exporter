@@ -3,7 +3,7 @@
 # This is a template that can be customized for your organization's needs
 #
 # The exporter exposes the following metrics:
-# - statuspage_service_status: Service operational status (1=operational, 0=maintenance, -1=incident/down)
+# - statuspage_service_status: Service operational status (1=operational, 0=incident/down)
 # - statuspage_incident_info: Active incident metadata (value=1 when active, 0 when resolved)
 # - statuspage_maintenance_info: Active maintenance event metadata
 # - statuspage_component_status: Individual component status
@@ -66,7 +66,7 @@ spec:
   - name: example_service_status_alerts
     rules:
       - alert: ExampleServiceDown
-        expr: statuspage_service_status{service_name="Example Service"} == -1
+        expr: statuspage_service_status{service_name="Example Service"} == 0
         for: 5m
         labels:
           severity: critical
@@ -76,22 +76,11 @@ spec:
             {{ $labels.service_name }} status page reports the service is down or has an active incident.
             Check the status page for more details.
 
-      - alert: ExampleServiceMaintenance
-        expr: statuspage_service_status{service_name="Example Service"} == 0
-        for: 1m
-        labels:
-          severity: info
-        annotations:
-          summary: "{{ $labels.service_name }} is in Maintenance"
-          description: |
-            {{ $labels.service_name }} is currently in a maintenance window.
-            This is typically scheduled and expected.
-
   # Example: Alert on degraded components
   - name: example_service_component_alerts
     rules:
       - alert: ExampleServiceComponentDegraded
-        expr: statuspage_component_status{service_name="Example Service"} == -1
+        expr: statuspage_component_status{service_name="Example Service"} == 0
         for: 5m
         labels:
           severity: warning

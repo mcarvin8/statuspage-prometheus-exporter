@@ -8,7 +8,7 @@ of services monitored via Atlassian Status Page.io.
 Metrics:
     - statuspage_status_gauge: Service operational status
         Labels: service_name
-        Values: 1 (operational), -1 (incident/down)
+        Values: 1 (operational), 0 (incident/down)
         
     - statuspage_response_time_gauge: API response time
         Labels: service_name
@@ -26,7 +26,7 @@ Metrics:
 
     - statuspage_component_status: Individual component status
         Labels: service_name, component_name
-        Values: 1 (operational), -1 (degraded/down/unknown)
+        Values: 1 (operational), 0 (degraded/down/unknown)
     
     - statuspage_component_timestamp: Last update timestamp of component
         Labels: service_name, component_name
@@ -49,11 +49,11 @@ The metrics are designed for use in Grafana dashboards with:
 """
 from prometheus_client import Gauge
 
-# Service status gauge (1=operational, -1=incident/down)
+# Service status gauge (1=operational, 0=incident/down)
 # Simplified to just track status value - incident details are in statuspage_incident_info
 statuspage_status_gauge = Gauge(
     'statuspage_service_status',
-    'Status of monitored services (1=operational, -1=incident/down)',
+    'Status of monitored services (1=operational, 0=incident/down)',
     ['service_name']
 )
 
@@ -83,7 +83,7 @@ statuspage_maintenance_info = Gauge(
 # Component status gauge
 statuspage_component_status = Gauge(
     'statuspage_component_status',
-    'Status of individual service components (1=operational, -1=degraded/down/unknown)',
+    'Status of individual service components (1=operational, 0=degraded/down/unknown)',
     ['service_name', 'component_name']
 )
 

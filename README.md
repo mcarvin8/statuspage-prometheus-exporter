@@ -35,7 +35,7 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
 
 The exporter exposes the following Prometheus metrics:
 
-- `statuspage_service_status`: Service operational status (1=operational, -1=incident/down)
+- `statuspage_service_status`: Service operational status (1=operational, 0=incident/down)
   - Labels: `service_name`
   
 - `statuspage_response_time_seconds`: API response time in seconds

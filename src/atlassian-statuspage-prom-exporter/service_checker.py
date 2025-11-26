@@ -31,18 +31,18 @@ Component Monitoring:
     - Component names are included in alert details for better context
     - Partial outages (some components down) are detected and reported
     - Component-level status is tracked in separate Prometheus gauge (statuspage_component_status)
-    - Each component status is mapped: operational=1, degraded/outage=-1, unknown=-1
+    - Each component status is mapped: operational=1, degraded/outage=0, unknown=0
 
 Status Mapping:
     StatusPage.io indicators mapped to numeric values:
     - 'none': 1 (All systems operational)
-    - 'minor': -1 (Minor service outage / degraded)
-    - 'major': -1 (Major service outage)
-    - 'critical': -1 (Critical service outage)
+    - 'minor': 0 (Minor service outage / degraded)
+    - 'major': 0 (Major service outage)
+    - 'critical': 0 (Critical service outage)
 
 Return Format:
     All check functions return a dictionary with:
-    - status: Numeric status value (1=operational, -1=incident/unknown, None=check failed)
+    - status: Numeric status value (1=operational, 0=incident/unknown, None=check failed)
     - response_time: API response time in seconds
     - raw_status: Raw status indicator from API
     - status_text: Human-readable status text
@@ -174,9 +174,9 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             if component_status == 'operational':
                 status_value = 1
             elif component_status in ['degraded_performance', 'partial_outage', 'major_outage']:
-                status_value = -1
+                status_value = 0
             else:
-                status_value = -1  # Unknown status defaults to -1 (treat as degraded/down)
+                status_value = 0  # Unknown status defaults to 0 (treat as degraded/down)
             
             component_metadata.append({
                 'name': component_name,
@@ -378,12 +378,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
         # Map statuspage.io indicators to our status values
         status_mapping = {
             'none': 1,           # All systems operational
-            'minor': -1,         # Minor service outage/degradation
-            'major': -1,         # Major service outage
-            'critical': -1       # Critical service outage
+            'minor': 0,          # Minor service outage/degradation
+            'major': 0,          # Major service outage
+            'critical': 0        # Critical service outage
         }
         
-        status_value = status_mapping.get(indicator.lower(), -1)  # Unknown status defaults to -1
+        status_value = status_mapping.get(indicator.lower(), 0)  # Unknown status defaults to 0
         
         # Determine status text based on indicator
         status_text_mapping = {

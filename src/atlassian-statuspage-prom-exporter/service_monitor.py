@@ -89,7 +89,7 @@ Process Flow:
     - This ensures continuity of monitoring even when individual requests fail
 
 Metrics Updated:
-    - statuspage_status_gauge: Service health status (-1=incident, 1=operational)
+    - statuspage_status_gauge: Service health status (0=incident, 1=operational)
         Simplified to just service_name and status value - incident details in statuspage_incident_info
         Only updated when status changes per service to prevent unnecessary updates
     - statuspage_response_time_gauge: API response time in seconds
@@ -98,7 +98,7 @@ Metrics Updated:
         Only updated when incidents change per service to prevent unnecessary updates
     - statuspage_maintenance_info: Active maintenance metadata (ID, name, schedule, shortlink, etc.)
         Only updated when maintenance changes per service to prevent unnecessary updates
-    - statuspage_component_status: Individual component status (1=operational, -1=degraded/down/unknown)
+    - statuspage_component_status: Individual component status (1=operational, 0=degraded/down/unknown)
         Only updated when components change per service to prevent unnecessary updates
     - statuspage_component_timestamp: Last update timestamp of component in Unix epoch milliseconds
         Only updated when components change per service to prevent unnecessary updates
