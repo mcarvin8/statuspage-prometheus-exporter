@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.3.0...v2.0.0) (2025-11-26)
+
+
+### ⚠ BREAKING CHANGES
+
+* Existing dashboards, alerts, and queries checking for == -1 will need to be updated to check for == 0. The statuspage_service_status and statuspage_component_status metrics now use 0 for degraded/incident states instead of -1.
+
+### Features
+
+* Change status values from 1/-1 to 1/0 for binary logic ([90c91ac](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/90c91accee64715e63df93a3d1a9ccb6c9ca1540))
+
 ## [1.3.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.2.2...v1.3.0) (2025-11-25)
 
 
