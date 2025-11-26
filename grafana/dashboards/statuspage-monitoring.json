@@ -1081,7 +1081,7 @@
                       "index": 0,
                       "text": "Operational"
                     },
-                    "-1": {
+                    "0": {
                       "color": "red",
                       "index": 1,
                       "text": "Degraded"
