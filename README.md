@@ -120,6 +120,7 @@ Each service requires:
 - `SERVICES_JSON_PATH`: Custom path to `services.json` file (default: `/app/statuspage-exporter/services.json`)
 - `CHECK_INTERVAL_MINUTES`: Interval in minutes between status checks (default: `20`)
 - `DEBUG`: Enable debug logging (set to `true` to enable, default: `false`/INFO level)
+- `CLEAR_CACHE`: Clear all cache files on startup (set to `true` to enable, default: `false`)
 
 ## Docker Setup
 

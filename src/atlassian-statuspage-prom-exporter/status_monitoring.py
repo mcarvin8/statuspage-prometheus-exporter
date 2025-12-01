@@ -28,6 +28,7 @@ Environment Variables:
     - METRICS_PORT: Prometheus metrics server port (default: 9001)
     - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20)
     - DEBUG: Enable debug logging (set to 'true' to enable, default: false/INFO level)
+    - CLEAR_CACHE: Clear all cache files on startup (set to 'true' to enable, default: false)
 
 Functions:
     - schedule_tasks: Configures APScheduler jobs
@@ -96,11 +97,17 @@ def main():
     # Schedule tasks
     schedule_tasks(scheduler, check_interval)
     
+    # Check if cache should be cleared on startup
+    clear_cache_on_startup = os.getenv('CLEAR_CACHE', 'false').lower() in ('true', '1', 'yes', 'on')
+    if clear_cache_on_startup:
+        logger.info("CLEAR_CACHE environment variable is set - clearing all cache files...")
+        clear_cache()
+    else:
+        logger.debug("CLEAR_CACHE not set - preserving existing cache files")
+    
     # Execute initial monitoring run
     # Pass is_initial_run=True to clear all gauges and remove stale data from previous pod instances
     logger.info("Executing initial monitoring run...")
-    # Uncomment this only when there's change in script affecting the cache data
-    # clear_cache()
     monitor_services(is_initial_run=True)
     
     # Start scheduler
