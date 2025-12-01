@@ -1,5 +1,17 @@
 # Changelog
 
+## [2.1.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.0.0...v2.1.0) (2025-12-01)
+
+
+### Features
+
+* add env variable to clear cache on startup ([c2f3bfd](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/c2f3bfdd7484e87f732ca85763c64646927d2839))
+
+
+### Bug Fixes
+
+* always update metrics even if cache is not changed ([06145ef](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/06145ef2b9ae03c30cebacb0429414398366adaf))
+
 ## [2.0.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v1.3.0...v2.0.0) (2025-11-26)
 
 
