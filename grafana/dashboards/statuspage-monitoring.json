@@ -65,7 +65,7 @@
         "type": "prometheus",
         "uid": "cip-o11y-aws-prd-us-west-2-theta"
       },
-      "description": "<div style=\"text-align: center; margin-top: -8px; font-size: 0.9em; color: #6b7280; font-style: italic;\">\n  <ul style=\"display: inline-block; text-align: left; margin-top: 4px;\">\n    <li><code>1</code> = Operational</li>\n    <li><code>0</code> = Degraded</li>\n  </ul>\n</div>",
+      "description": "<table>\n  <tr>\n    <th>Value</th>\n    <th>Meaning</th>\n  </tr>\n  <tr>\n    <td><strong>1</strong></td>\n    <td>Operational</td>\n  </tr>\n  <tr>\n    <td><strong>0</strong></td>\n    <td>Degraded</td>\n  </tr>\n</table>\n",
       "fieldConfig": {
         "defaults": {
           "color": {
@@ -219,15 +219,15 @@
                 "value": [
                   {
                     "options": {
-                      "1": {
-                        "color": "green",
-                        "index": 0,
-                        "text": "Operational"
-                      },
                       "0": {
                         "color": "red",
                         "index": 1,
                         "text": "Degraded"
+                      },
+                      "1": {
+                        "color": "green",
+                        "index": 0,
+                        "text": "Operational"
                       }
                     },
                     "type": "value"
@@ -391,7 +391,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 25
+            "y": 136
           },
           "id": 12,
           "interval": "5m",
@@ -550,7 +550,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 33
+            "y": 144
           },
           "id": 11,
           "interval": "10m",
@@ -751,7 +751,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 176
+            "y": 320
           },
           "id": 13,
           "interval": "5m",
@@ -922,7 +922,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 184
+            "y": 345
           },
           "id": 7,
           "interval": "10m",
@@ -1076,15 +1076,15 @@
               "mappings": [
                 {
                   "options": {
-                    "1": {
-                      "color": "green",
-                      "index": 0,
-                      "text": "Operational"
-                    },
                     "0": {
                       "color": "red",
                       "index": 1,
                       "text": "Degraded"
+                    },
+                    "1": {
+                      "color": "green",
+                      "index": 0,
+                      "text": "Operational"
                     }
                   },
                   "type": "value"
@@ -1105,7 +1105,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 244
+            "y": 72
           },
           "id": 14,
           "interval": "5m",
@@ -1187,6 +1187,274 @@
         }
       ],
       "title": "Component Status",
+      "type": "row"
+    },
+    {
+      "collapsed": true,
+      "gridPos": {
+        "h": 1,
+        "w": 24,
+        "x": 0,
+        "y": 27
+      },
+      "id": 17,
+      "panels": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "<p>Shows the current probe check status and last update timestamp for each application at the current instant.</p>\n\n<table>\n  <tr>\n    <th>Metric</th>\n    <th>Description</th>\n  </tr>\n  <tr>\n    <td><strong>Probe Check</strong></td>\n    <td>Indicates whether all status queries were successful for the application. <strong>1</strong> = all successful, <strong>0</strong> = at least one failed.</td>\n  </tr>\n  <tr>\n    <td><strong>Application Timestamp</strong></td>\n    <td>Unix timestamp (milliseconds) of the last update to the overall application status. Updated whenever the service status changes.</td>\n  </tr>\n</table>",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "color-text"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Probe Check"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "0": {
+                            "color": "red",
+                            "index": 1,
+                            "text": "At Least 1 Check Failed"
+                          },
+                          "1": {
+                            "color": "green",
+                            "index": 0,
+                            "text": "All Checks Successful"
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Application Timestamp"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsLocal"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 90
+          },
+          "id": 18,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "max by (service_name) (statuspage_probe_check)",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "A"
+            },
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "max by (service_name) (statuspage_application_timestamp)",
+              "format": "table",
+              "hide": false,
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "B"
+            }
+          ],
+          "title": "Application Health Checks",
+          "transformations": [
+            {
+              "id": "merge",
+              "options": {}
+            },
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "includeByName": {},
+                "indexByName": {},
+                "renameByName": {
+                  "Value #A": "Probe Check",
+                  "Value #B": "Application Timestamp",
+                  "service_name": "Application Name"
+                }
+              }
+            }
+          ],
+          "transparent": true,
+          "type": "table"
+        },
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "cip-o11y-aws-prd-us-west-2-theta"
+          },
+          "description": "<p>Shows the last update timestamp for each component of each application at the current instant.</p>\n\n<table>\n  <tr>\n    <th>Metric</th>\n    <th>Description</th>\n  </tr>\n  <tr>\n    <td><strong>Component Timestamp</strong></td>\n    <td>Unix timestamp in milliseconds indicating when each component was last updated. Updated on every status check cycle.</td>\n  </tr>\n</table>",
+          "fieldConfig": {
+            "defaults": {
+              "color": {
+                "mode": "thresholds"
+              },
+              "custom": {
+                "align": "auto",
+                "cellOptions": {
+                  "type": "color-text"
+                },
+                "inspect": false
+              },
+              "mappings": [],
+              "thresholds": {
+                "mode": "absolute",
+                "steps": [
+                  {
+                    "color": "text"
+                  }
+                ]
+              }
+            },
+            "overrides": [
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Application Component Timestamp"
+                },
+                "properties": [
+                  {
+                    "id": "unit",
+                    "value": "dateTimeAsLocal"
+                  }
+                ]
+              }
+            ]
+          },
+          "gridPos": {
+            "h": 14,
+            "w": 24,
+            "x": 0,
+            "y": 104
+          },
+          "id": 19,
+          "options": {
+            "cellHeight": "sm",
+            "footer": {
+              "countRows": false,
+              "fields": "",
+              "reducer": [
+                "sum"
+              ],
+              "show": false
+            },
+            "showHeader": true
+          },
+          "pluginVersion": "12.0.5",
+          "targets": [
+            {
+              "datasource": {
+                "type": "prometheus",
+                "uid": "cip-o11y-aws-prd-us-west-2-theta"
+              },
+              "editorMode": "code",
+              "exemplar": false,
+              "expr": "max by (service_name, component_name) (statuspage_component_timestamp)",
+              "format": "table",
+              "instant": true,
+              "legendFormat": "__auto",
+              "range": false,
+              "refId": "A"
+            }
+          ],
+          "title": "Application Component Update Timestamps",
+          "transformations": [
+            {
+              "id": "organize",
+              "options": {
+                "excludeByName": {
+                  "Time": true
+                },
+                "includeByName": {},
+                "indexByName": {
+                  "Time": 0,
+                  "Value": 3,
+                  "component_name": 2,
+                  "service_name": 1
+                },
+                "renameByName": {
+                  "Value": "Application Component Timestamp",
+                  "Value #A": "Probe Check",
+                  "Value #B": "Application Timestamp",
+                  "component_name": "Component Name",
+                  "service_name": "Application Name"
+                }
+              }
+            }
+          ],
+          "transparent": true,
+          "type": "table"
+        }
+      ],
+      "title": "Health Checks",
       "type": "row"
     }
   ],
