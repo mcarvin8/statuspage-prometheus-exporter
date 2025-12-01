@@ -39,6 +39,7 @@ from prometheus_client import start_http_server
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from service_monitor import monitor_services
+from cache_manager import clear_cache
 
 # Configure logging based on DEBUG environment variable
 debug_enabled = os.getenv('DEBUG', 'false').lower() in ('true', '1', 'yes', 'on')
@@ -98,6 +99,8 @@ def main():
     # Execute initial monitoring run
     # Pass is_initial_run=True to clear all gauges and remove stale data from previous pod instances
     logger.info("Executing initial monitoring run...")
+    # Uncomment this only when there's change in script affecting the cache data
+    # clear_cache()
     monitor_services(is_initial_run=True)
     
     # Start scheduler

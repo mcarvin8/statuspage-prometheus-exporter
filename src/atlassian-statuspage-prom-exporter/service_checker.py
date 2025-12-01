@@ -31,18 +31,18 @@ Component Monitoring:
     - Component names are included in alert details for better context
     - Partial outages (some components down) are detected and reported
     - Component-level status is tracked in separate Prometheus gauge (statuspage_component_status)
-    - Each component status is mapped: operational=1, degraded/outage=0, unknown=0
+    - Each component status is mapped: operational=1, degraded_performance/outage=0
 
 Status Mapping:
     StatusPage.io indicators mapped to numeric values:
     - 'none': 1 (All systems operational)
-    - 'minor': 0 (Minor service outage / degraded)
+    - 'minor': 0 (Minor service outage)
     - 'major': 0 (Major service outage)
     - 'critical': 0 (Critical service outage)
 
 Return Format:
     All check functions return a dictionary with:
-    - status: Numeric status value (1=operational, 0=incident/unknown, None=check failed)
+    - status: Numeric status value (1=operational, 0=degraded/incident, None=check failed)
     - response_time: API response time in seconds
     - raw_status: Raw status indicator from API
     - status_text: Human-readable status text
@@ -69,7 +69,7 @@ from urllib3.util.retry import Retry
 import logging
 import time
 from typing import Dict, Any
-from cache_manager import save_service_response
+from cache_manager import save_service_response, load_service_response
 
 logger = logging.getLogger(__name__)
 
@@ -176,7 +176,7 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             elif component_status in ['degraded_performance', 'partial_outage', 'major_outage']:
                 status_value = 0
             else:
-                status_value = 0  # Unknown status defaults to 0 (treat as degraded/down)
+                status_value = 0  # Unknown status defaults to 0
             
             component_metadata.append({
                 'name': component_name,
@@ -252,12 +252,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
                 incident_status = inc.get('status', 'unknown')
                 
                 affected_comps = [c.get('name', '') for c in inc.get('components', [])]
-
+                
                 # Skip system metadata test incidents (e.g., "_system_metadata:...")
                 if name.startswith('_system_metadata:'):
                     logger.debug(f"Status page service {service_key}: Skipping system metadata test incident: {incident_id} ({name[:50]}...)")
                     continue
-
+                
                 # Build metadata dict
                 metadata = {
                     'id': incident_id,
@@ -309,7 +309,7 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
                 inc_name = inc.get('name', 'Unnamed incident')
                 if inc_name.startswith('_system_metadata:'):
                     continue
-
+                
                 inc_impact = inc.get('impact', 'none').lower()
                 inc_priority = severity_priority.get(inc_impact, 0)
                 if inc_priority > highest_priority:
@@ -378,12 +378,12 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
         # Map statuspage.io indicators to our status values
         status_mapping = {
             'none': 1,           # All systems operational
-            'minor': 0,          # Minor service outage/degradation
-            'major': 0,          # Major service outage
-            'critical': 0        # Critical service outage
+            'minor': 0,         # Minor service outage
+            'major': 0,         # Major service outage
+            'critical': 0       # Critical service outage
         }
         
-        status_value = status_mapping.get(indicator.lower(), 0)  # Unknown status defaults to 0
+        status_value = status_mapping.get(indicator.lower(), 0)
         
         # Determine status text based on indicator
         status_text_mapping = {
@@ -409,8 +409,91 @@ def check_status_page_service(service_key: str, service_config: Dict[str, Any]) 
             'component_metadata': component_metadata  # List of component details with status
         }
         
-        # Save successful response to cache for fallback on future failures
-        save_service_response(service_key, result)
+        # Preserve original labels for existing incidents/maintenance/components to prevent duplicate alerts
+        # Load existing cache and merge labels for incidents/maintenance/components that already exist
+        # This ensures the cache only updates specific values that change, not entire metadata
+        existing_cache = load_service_response(service_key)
+        if existing_cache:
+            existing_incidents = {inc.get('id', 'unknown'): inc for inc in existing_cache.get('incident_metadata', [])}
+            existing_maintenance = {maint.get('id', 'unknown'): maint for maint in existing_cache.get('maintenance_metadata', [])}
+            existing_components = {comp.get('name', 'Unknown'): comp for comp in existing_cache.get('component_metadata', [])}
+            
+            # Preserve labels for existing incidents (same ID)
+            # Only the status_value changes, labels stay the same to prevent duplicate alerts
+            for incident in result['incident_metadata']:
+                incident_id = incident.get('id', 'unknown')
+                if incident_id in existing_incidents:
+                    # Use existing labels to prevent duplicate alerts
+                    existing_inc = existing_incidents[incident_id]
+                    incident['name'] = existing_inc.get('name', incident.get('name', 'Unknown'))
+                    incident['affected_components'] = existing_inc.get('affected_components', incident.get('affected_components', []))
+                    incident['impact'] = existing_inc.get('impact', incident.get('impact', 'unknown'))
+                    incident['shortlink'] = existing_inc.get('shortlink', incident.get('shortlink', 'N/A'))
+                    incident['started_at'] = existing_inc.get('started_at', incident.get('started_at', ''))
+                    logger.debug(f"Status page service {service_key}: Preserved original labels for existing incident {incident_id}")
+            
+            # Preserve labels for existing maintenance (same ID)
+            # Only the schedule/status changes, labels stay the same to prevent duplicate alerts
+            for maintenance in result['maintenance_metadata']:
+                maintenance_id = maintenance.get('id', 'unknown')
+                if maintenance_id in existing_maintenance:
+                    # Use existing labels to prevent duplicate alerts
+                    existing_maint = existing_maintenance[maintenance_id]
+                    maintenance['name'] = existing_maint.get('name', maintenance.get('name', 'Unknown'))
+                    maintenance['affected_components'] = existing_maint.get('affected_components', maintenance.get('affected_components', []))
+                    maintenance['scheduled_start'] = existing_maint.get('scheduled_start', maintenance.get('scheduled_start', ''))
+                    maintenance['scheduled_end'] = existing_maint.get('scheduled_end', maintenance.get('scheduled_end', ''))
+                    maintenance['shortlink'] = existing_maint.get('shortlink', maintenance.get('shortlink', 'N/A'))
+                    logger.debug(f"Status page service {service_key}: Preserved original labels for existing maintenance {maintenance_id}")
+            
+            # Preserve component metadata for existing components (same name)
+            # Only status_value changes, component name and other metadata stay the same
+            for component in result.get('component_metadata', []):
+                component_name = component.get('name', 'Unknown')
+                if component_name in existing_components:
+                    # Preserve existing component metadata (status may change, but name stays consistent)
+                    existing_comp = existing_components[component_name]
+                    # Only update status_value if it changed, keep other metadata consistent
+                    # Note: status_value is already set from API, we just ensure name consistency
+                    logger.debug(f"Status page service {service_key}: Component {component_name} exists in cache, status_value may have changed")
+        
+        # Only update cache if values have actually changed (excluding response_time which isn't used for alerts)
+        # This ensures the cache reflects exactly what was used to populate alerts
+        cache_should_update = True
+        if existing_cache:
+            # Compare meaningful fields (exclude response_time, raw_status, status_text, details which can change without affecting alerts)
+            current_incident_ids = {inc.get('id', 'unknown') for inc in result.get('incident_metadata', [])}
+            cached_incident_ids = {inc.get('id', 'unknown') for inc in existing_cache.get('incident_metadata', [])}
+            
+            current_maintenance_ids = {maint.get('id', 'unknown') for maint in result.get('maintenance_metadata', [])}
+            cached_maintenance_ids = {maint.get('id', 'unknown') for maint in existing_cache.get('maintenance_metadata', [])}
+            
+            # Compare component status (by name and status_value)
+            current_components = {(comp.get('name', 'Unknown'), comp.get('status_value', 0)) for comp in result.get('component_metadata', [])}
+            cached_components = {(comp.get('name', 'Unknown'), comp.get('status_value', 0)) for comp in existing_cache.get('component_metadata', [])}
+            
+            # Check if anything meaningful changed
+            status_changed = existing_cache.get('status') != result.get('status')
+            incidents_changed = current_incident_ids != cached_incident_ids
+            maintenance_changed = current_maintenance_ids != cached_maintenance_ids
+            components_changed = current_components != cached_components
+            
+            if not (status_changed or incidents_changed or maintenance_changed or components_changed):
+                # Nothing meaningful changed - don't update cache
+                cache_should_update = False
+                logger.debug(f"Status page service {service_key}: No meaningful changes detected, skipping cache update")
+        
+        if cache_should_update:
+            # Remove response_time from result before caching (not used for alerts)
+            cache_result = result.copy()
+            cache_result.pop('response_time', None)
+            
+            # Save successful response to cache for fallback on future failures
+            # Labels are preserved for existing incidents/maintenance, and cache only updates when values change
+            save_service_response(service_key, cache_result)
+            logger.debug(f"Status page service {service_key}: Cache updated with new data")
+        else:
+            logger.debug(f"Status page service {service_key}: Cache unchanged, preserving existing cache")
         
         return result
         
@@ -527,4 +610,5 @@ def check_service_status(service_key: str, service_config: Dict[str, Any]) -> Di
     Returns:
         Dictionary with status information
     """
+    # All services are status_page type
     return check_status_page_service(service_key, service_config)
