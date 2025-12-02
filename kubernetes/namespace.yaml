@@ -1,0 +1,16 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: statuspage-exporter
+  labels:
+    app.kubernetes.io/name: statuspage-exporter
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: manual
+  # Add your organization-specific annotations and labels here
+  # annotations:
+  #   your-org.io/contact: your-team@example.com
+  #   your-org.io/team: YOUR-TEAM
+  # labels:
+  #   your-org.io/environment: prd
+  #   your-org.io/part-of: your-group
+

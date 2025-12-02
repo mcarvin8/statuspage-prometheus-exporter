@@ -1,0 +1,18 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: statuspage-exporter-cache
+  namespace: statuspage-exporter
+  labels:
+    app.kubernetes.io/name: statuspage-exporter
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: manual
+spec:
+  accessModes:
+    - ReadWriteOnce  # Change to ReadWriteMany if using NFS
+  resources:
+    requests:
+      storage: 100Mi  # Adjust size as needed
+  storageClassName: standard  # Change to your storage class (e.g., phx-nfs, gp2, etc.)
+  volumeMode: Filesystem
+

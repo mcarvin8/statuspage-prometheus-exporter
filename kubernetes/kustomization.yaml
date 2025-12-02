@@ -1,0 +1,25 @@
+# Kustomization file for easy deployment
+# Usage: kubectl apply -k kubernetes/
+
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: statuspage-exporter
+
+resources:
+  - namespace.yaml
+  - configmap.yaml
+  - persistentvolumeclaim.yaml
+  - deployment.yaml
+  - service.yaml
+  - servicemonitor.yaml
+
+# Uncomment and customize these as needed:
+# commonLabels:
+#   your-org.io/environment: prd
+#   your-org.io/team: your-team
+
+# images:
+#   - name: mcarvin8/statuspage-prometheus-exporter
+#     newTag: latest
+

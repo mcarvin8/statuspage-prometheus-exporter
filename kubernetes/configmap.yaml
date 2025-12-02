@@ -1,0 +1,20 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: statuspage-exporter-services
+  namespace: statuspage-exporter
+  labels:
+    app.kubernetes.io/name: statuspage-exporter
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: manual
+data:
+  services.json: |
+    {
+      "example_service": {
+        "url": "https://status.example.com/api/v2/summary.json",
+        "name": "Example Service"
+      }
+    }
+  # Replace the services.json content above with your actual service configurations
+  # See services.json.example in the repository for the expected format
+

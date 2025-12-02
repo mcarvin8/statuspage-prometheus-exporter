@@ -1,0 +1,80 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statuspage-exporter
+  namespace: statuspage-exporter
+  labels:
+    app.kubernetes.io/name: statuspage-exporter
+    app.kubernetes.io/component: monitoring
+    app.kubernetes.io/managed-by: manual
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: statuspage-exporter
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: statuspage-exporter
+        app.kubernetes.io/component: monitoring
+        app.kubernetes.io/managed-by: manual
+    spec:
+      containers:
+        - name: statuspage-exporter
+          # Update with your container registry and image
+          image: mcarvin8/statuspage-prometheus-exporter:latest
+          imagePullPolicy: Always
+          ports:
+            - name: web
+              containerPort: 9001
+              protocol: TCP
+          env:
+            # Optional: Set custom check interval (default: 20 minutes)
+            - name: CHECK_INTERVAL_MINUTES
+              value: "20"
+            # Optional: Enable debug logging
+            # - name: DEBUG
+            #   value: "true"
+            # Optional: Clear cache on startup
+            # - name: CLEAR_CACHE
+            #   value: "true"
+            # Optional: Custom metrics port (default: 9001)
+            # - name: METRICS_PORT
+            #   value: "9001"
+            # Optional: Custom path to services.json
+            # - name: SERVICES_JSON_PATH
+            #   value: "/app/statuspage-exporter/services.json"
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              memory: 512Mi
+          volumeMounts:
+            - name: cache
+              mountPath: /app/statuspage-exporter/cache
+            # Mount your services.json file
+            - name: services-config
+              mountPath: /app/statuspage-exporter/services.json
+              subPath: services.json
+              readOnly: true
+          securityContext:
+            readOnlyRootFilesystem: false
+            runAsNonRoot: false
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+      terminationGracePeriodSeconds: 30
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: statuspage-exporter-cache
+        - name: services-config
+          configMap:
+            name: statuspage-exporter-services
+
