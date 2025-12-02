@@ -64,36 +64,43 @@ The exporter exposes the following Prometheus metrics:
 
 ## Metric Caching Strategy
 
-The exporter uses intelligent caching to minimize unnecessary Prometheus gauge updates and prevent alert churn. This ensures that gauges are only cleared and reset when there are actual changes to the monitored data.
+The exporter uses intelligent caching to maintain metric freshness in Prometheus while preventing duplicate alerts. Gauges are always updated to keep metrics fresh, while the cache is used to preserve labels for existing incidents/maintenance to prevent alert churn.
 
-### Cached Metrics (Update Only on Change)
+### Gauge Update Strategy (Always Fresh)
 
-The following metrics use cache comparison to avoid unnecessary updates:
+All metrics are updated on every check cycle to ensure Prometheus knows they're still active and they appear correctly in Grafana dashboards:
 
-- **`statuspage_service_status`**: Only updates when the service status changes (operational/incident transitions)
-- **`statuspage_incident_info`**: Only updates when incidents are added, removed, or their IDs change
-- **`statuspage_maintenance_info`**: Only updates when maintenance events are added, removed, or their IDs change
-- **`statuspage_component_status`**: Only updates when components are added, removed, or their status values change
+- **`statuspage_service_status`**: Always updated (even if status unchanged) to keep metrics fresh
+- **`statuspage_incident_info`**: Always updated for active incidents to maintain freshness
+- **`statuspage_maintenance_info`**: Always updated for active maintenance to maintain freshness
+- **`statuspage_component_status`**: Always updated for all components to maintain freshness
+- **`statuspage_component_timestamp`**: Always updated with current timestamp
+- **`statuspage_application_timestamp`**: Always updated with current timestamp
+- **`statuspage_response_time_seconds`**: Always cleared and updated every run (dynamic metric)
+- **`statuspage_probe_check`**: Always updated to reflect current probe status
 
-**How it works:**
-1. Before each status check, the exporter loads the previous cached state for each service
-2. After collecting current status data, it compares the current state with the cached state
-3. Gauges are only updated when differences are detected (new items, removed items, or status changes)
-4. If no cache exists (first run or cache cleared), all gauges update normally to establish the initial state
-5. Resolved incidents and completed maintenance events are cleared by setting their gauge values to 0 using cached metadata to match exact labels
+**Label Preservation for Duplicate Alert Prevention:**
+- For existing incidents/maintenance (same ID), labels are preserved from cache to prevent duplicate alerts
+- For new incidents/maintenance, current labels from the API are used
+- This ensures Prometheus recognizes them as the same metric series, preventing alert re-firing
+
+### Cache Management Strategy
+
+The cache is used for two purposes:
+1. **Fallback on API failures**: If an API request fails, cached data is used to maintain metric continuity
+2. **Label preservation**: Existing incident/maintenance labels are preserved to prevent duplicate alerts
+
+**Cache Update Logic:**
+- Cache only updates when meaningful values change (status, incident IDs, maintenance IDs, component status)
+- `response_time` is excluded from cache (not used for alerts)
+- Labels for existing incidents/maintenance are preserved from cache to maintain consistent metric series
+- Cache comparison is used for logging changes, but doesn't prevent gauge updates
 
 **Benefits:**
-- Prevents unnecessary Prometheus gauge writes on every check cycle
-- Reduces alert churn by avoiding gauge resets when data hasn't changed
+- Metrics stay fresh in Prometheus and Grafana dashboards
+- Prevents duplicate alerts by preserving labels for existing incidents/maintenance
 - Maintains metric continuity even when individual API requests fail (falls back to cached data)
-- Ensures accurate metrics by always updating on actual state changes
-
-### Non-Cached Metric (Always Updates)
-
-- **`statuspage_response_time_seconds`**: Always cleared and updated every run
-  - Response times are dynamic metrics used for performance trending
-  - This metric is not used for alerts, so frequent updates are acceptable
-  - Provides continuous tracking of API performance over time
+- Reduces unnecessary cache writes by only updating when meaningful data changes
 
 ## Configuration
 
