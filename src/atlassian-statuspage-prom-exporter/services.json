@@ -46,5 +46,21 @@
   "fivetran": {
     "url": "https://status.fivetran.com/api/v2/summary.json",
     "name": "Fivetran"
+  },
+  "glean": {
+    "url": "https://status.glean.com/api/v2/summary.json",
+    "name": "Glean"
+  },
+  "boomi": {
+    "url": "https://status.boomi.com/api/v2/summary.json",
+    "name": "Boomi"
+  },
+  "tackle": {
+    "url": "https://status.tackle.io/api/v2/summary.json",
+    "name": "Tackle.io"
+  },
+  "prodly": {
+    "url": "https://status.prodly.co/api/v2/summary.json",
+    "name": "Prodly"
   }
 }
