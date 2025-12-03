@@ -1,7 +1,7 @@
 """
 Service Monitoring Orchestration Module
 
-This module orchestrates the monitoring of all configured business applications
+This module orchestrates the monitoring of all configured services
 by iterating through the service definitions, checking their status, and updating
 Prometheus metrics with the results.
 
@@ -206,7 +206,7 @@ def normalize_timestamp(timestamp_str):
 
 def monitor_services(is_initial_run=False):
     """
-    Monitor all business applications and update Prometheus metrics.
+    Monitor all configured services and update Prometheus metrics.
     
     Args:
         is_initial_run: If True, clears all gauges to remove stale data from previous pod instances.
@@ -220,7 +220,7 @@ def monitor_services(is_initial_run=False):
     This minimizes the window where Prometheus might scrape empty gauges
     by collecting all data before clearing and updating.
     """
-    logger.info("Starting bizapps services monitoring...")
+    logger.info("Starting status page services monitoring...")
     
     # Step 1: Collect all status check results first
     # Load previous cache for each service BEFORE checking (to compare against old state)
@@ -719,4 +719,4 @@ def monitor_services(is_initial_run=False):
                 logger.debug(f"{service_name}: No component metadata - components may have been cleared")
         # Note: Failed checks are logged but not tracked in metrics (check logs for failure details)
     
-    logger.info("Bizapps services monitoring completed")
+    logger.info("Status page monitoring completed")

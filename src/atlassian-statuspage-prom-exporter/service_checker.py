@@ -2,7 +2,7 @@
 Service Status Checking Module
 
 This module provides functions for checking the operational status of external
-business applications and SaaS services. It supports multiple service types
+SaaS services. It supports multiple service types
 and status page formats.
 
 Supported Service Types:
