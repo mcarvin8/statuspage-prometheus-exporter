@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.0...v2.2.1) (2025-12-03)
+
+
+### Bug Fixes
+
+* revert changes made to logging statements ([2edbea9](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/2edbea90af59d5ef028fb7069cbb3eabfd477f62))
+
 ## [2.2.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.1.0...v2.2.0) (2025-12-03)
 
 
