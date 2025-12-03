@@ -62,5 +62,21 @@
   "prodly": {
     "url": "https://status.prodly.co/api/v2/summary.json",
     "name": "Prodly"
+  },
+  "arovy": {
+    "url": "https://arovy.statuspage.io/api/v2/summary.json",
+    "name": "Arovy"
+  },
+  "zoominfo": {
+    "url": "https://status.zoominfo.com/api/v2/summary.json",
+    "name": "ZoomInfo"
+  },
+  "workramp": {
+    "url": "https://workramp.statuspage.io/api/v2/summary.json",
+    "name": "WorkRamp"
+  },
+  "authorizedotnet": {
+    "url": "https://status.authorize.net/api/v2/summary.json",
+    "name": "Authorize.net"
   }
 }

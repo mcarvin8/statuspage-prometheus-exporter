@@ -1,7 +1,7 @@
 """
 Service Monitoring Orchestration Module
 
-This module orchestrates the monitoring of all configured services
+This module orchestrates the monitoring of all configured business applications
 by iterating through the service definitions, checking their status, and updating
 Prometheus metrics with the results.
 
@@ -10,15 +10,16 @@ Functions:
       status checks for all services and updates Prometheus gauges
 
 Process Flow:
-    1. Iterate through all services defined in services.json and collect status check results
-    2. For failed requests, attempt to load cached response data as fallback
-    3. Clear existing Prometheus gauge labels:
+    1. Load previous cache for all services (sequential, fast file I/O)
+    2. Check all services in parallel using ThreadPoolExecutor (up to 10 concurrent requests)
+    3. For failed requests, attempt to load cached response data as fallback
+    4. Clear existing Prometheus gauge labels:
        - On initial run: Clear ALL gauges to remove stale data from previous pod instances
        - On subsequent runs: Only clear response_time gauge (others updated selectively)
-    4. Update all gauges with collected results
-    5. For incident, maintenance, status, and component gauges: Only update when they change per service (prevents unnecessary updates)
-    6. Response time gauge always updates (dynamic metric for trending)
-    7. Failed checks are logged (check logs for failure details)
+    5. Update all gauges with collected results
+    6. For incident, maintenance, status, and component gauges: Always update to keep metrics fresh
+    7. Response time gauge always updates (dynamic metric for trending)
+    8. Failed checks are logged (check logs for failure details)
     
     Incident Gauge Strategy:
     - Incident gauge is cleared on initial run only (to remove stale data from previous pods)
@@ -85,7 +86,7 @@ Process Flow:
     - This ensures continuity of monitoring even when individual requests fail
 
 Metrics Updated:
-    - statuspage_status_gauge: Service health status (0=incident, 1=operational)
+    - statuspage_status_gauge: Service health status (1=operational, 0=degraded/incident)
         Simplified to just service_name and status value - incident details in statuspage_incident_info
         Only updated when status changes per service to prevent unnecessary updates
     - statuspage_response_time_gauge: API response time in seconds
@@ -94,7 +95,7 @@ Metrics Updated:
         Only updated when incidents change per service to prevent unnecessary updates
     - statuspage_maintenance_info: Active maintenance metadata (ID, name, schedule, shortlink, etc.)
         Only updated when maintenance changes per service to prevent unnecessary updates
-    - statuspage_component_status: Individual component status (1=operational, 0=degraded/down/unknown)
+    - statuspage_component_status: Individual component status (1=operational, 0=degraded_performance/outage)
         Only updated when components change per service to prevent unnecessary updates
     - statuspage_component_timestamp: Last update timestamp of component in Unix epoch milliseconds
         Only updated when components change per service to prevent unnecessary updates
@@ -114,6 +115,7 @@ available, preventing alert churn from transient failures.
 import logging
 import re
 import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from service_checker import SERVICES, check_service_status
 from gauges import (statuspage_status_gauge, statuspage_response_time_gauge,
                     statuspage_incident_info, statuspage_maintenance_info,
@@ -122,6 +124,66 @@ from gauges import (statuspage_status_gauge, statuspage_response_time_gauge,
 from cache_manager import load_service_response
 
 logger = logging.getLogger(__name__)
+
+def check_service_with_fallback(service_key, service_config):
+    """
+    Check a single service status with cache fallback on failure.
+    
+    Args:
+        service_key: Service identifier key
+        service_config: Service configuration dictionary
+        
+    Returns:
+        Dictionary with service_key, service_config, and result
+    """
+    logger.info(f"Checking {service_config['name']} ({service_key})...")
+    
+    result = check_service_status(service_key, service_config)
+    original_failure = None
+    
+    # If request failed, try to load cached response as fallback
+    if not result['success']:
+        # Store original failure info for tracking
+        original_failure = {
+            'raw_status': result.get('raw_status', 'unknown'),
+            'error': result.get('error', 'Unknown error')
+        }
+        
+        logger.warning(f"{service_config['name']}: Check failed ({original_failure['raw_status']}), attempting to load cached response...")
+        cached_result = load_service_response(service_key)
+        
+        if cached_result:
+            logger.info(f"{service_config['name']}: Using cached response data (from previous successful check)")
+            # Mark that this is cached data (for logging/metrics)
+            result = cached_result.copy()
+            result['from_cache'] = True
+            result['original_failure'] = original_failure  # Preserve failure info for logging
+            # response_time is not cached (not used for alerts), set to 0 for cached data
+            if 'response_time' not in result:
+                result['response_time'] = 0.0
+        else:
+            logger.warning(f"{service_config['name']}: No cached data available, will skip gauge update - {original_failure['error']}")
+            result['from_cache'] = False
+            result['original_failure'] = original_failure
+    else:
+        # Successful request - cache will be saved by service_checker
+        result['from_cache'] = False
+        result['original_failure'] = None
+    
+    # Log result immediately
+    cache_note = " (from cache)" if result.get('from_cache', False) else ""
+    if result['success'] or result.get('from_cache', False):
+        response_time = result.get('response_time', 0.0)
+        logger.info(f"{service_config['name']}: {result['raw_status']} "
+                   f"(response time: {response_time:.2f}s){cache_note}")
+    else:
+        logger.warning(f"{service_config['name']}: Check failed ({result.get('raw_status', 'unknown')}), no cached data available - {result.get('error', 'Unknown error')}")
+    
+    return {
+        'service_key': service_key,
+        'service_config': service_config,
+        'result': result
+    }
 
 def normalize_timestamp(timestamp_str):
     """
@@ -144,12 +206,12 @@ def normalize_timestamp(timestamp_str):
 
 def monitor_services(is_initial_run=False):
     """
-    Monitor all configured services and update Prometheus metrics.
-
+    Monitor all business applications and update Prometheus metrics.
+    
     Args:
         is_initial_run: If True, clears all gauges to remove stale data from previous pod instances.
                        If False, only clears response_time gauge (others updated selectively).
-
+    
     Process Flow:
     1. Collect status check results for all services first
     2. Clear existing Prometheus gauge labels to remove stale metrics
@@ -158,65 +220,62 @@ def monitor_services(is_initial_run=False):
     This minimizes the window where Prometheus might scrape empty gauges
     by collecting all data before clearing and updating.
     """
-    logger.info("Starting status page services monitoring...")
+    logger.info("Starting bizapps services monitoring...")
     
     # Step 1: Collect all status check results first
     # Load previous cache for each service BEFORE checking (to compare against old state)
+    # This is fast (file I/O) so we keep it sequential
     previous_caches = {}
     for service_key in SERVICES.keys():
         previous_caches[service_key] = load_service_response(service_key)
     
+    # Step 2: Check all services in parallel for better performance
+    # Use ThreadPoolExecutor to make concurrent HTTP requests
+    # Limit concurrent requests to avoid overwhelming APIs or hitting OS limits
     results = []
-    for service_key, service_config in SERVICES.items():
-        logger.info(f"Checking {service_config['name']} ({service_key})...")
+    max_workers = min(10, len(SERVICES))  # Limit to 10 concurrent requests or number of services, whichever is smaller
+    
+    logger.info(f"Checking {len(SERVICES)} services with up to {max_workers} parallel requests...")
+    start_time = time.time()
+    
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        # Submit all service checks to the thread pool
+        future_to_service = {
+            executor.submit(check_service_with_fallback, service_key, service_config): (service_key, service_config)
+            for service_key, service_config in SERVICES.items()
+        }
         
-        result = check_service_status(service_key, service_config)
-        original_failure = None
-        
-        # If request failed, try to load cached response as fallback
-        if not result['success']:
-            # Store original failure info for tracking
-            original_failure = {
-                'raw_status': result.get('raw_status', 'unknown'),
-                'error': result.get('error', 'Unknown error')
-            }
-            
-            logger.warning(f"{service_config['name']}: Check failed ({original_failure['raw_status']}), attempting to load cached response...")
-            cached_result = load_service_response(service_key)
-            
-            if cached_result:
-                logger.info(f"{service_config['name']}: Using cached response data (from previous successful check)")
-                # Mark that this is cached data (for logging/metrics)
-                result = cached_result.copy()
-                result['from_cache'] = True
-                result['original_failure'] = original_failure  # Preserve failure info for logging
-                # response_time is not cached (not used for alerts), set to 0 for cached data
-                if 'response_time' not in result:
-                    result['response_time'] = 0.0
-            else:
-                logger.warning(f"{service_config['name']}: No cached data available, will skip gauge update - {original_failure['error']}")
-                result['from_cache'] = False
-                result['original_failure'] = original_failure
-        else:
-            # Successful request - cache will be saved by service_checker
-            result['from_cache'] = False
-            result['original_failure'] = None
-        
-        # Store result with service config for later processing
-        results.append({
-            'service_key': service_key,
-            'service_config': service_config,
-            'result': result
-        })
-        
-        # Log result immediately
-        cache_note = " (from cache)" if result.get('from_cache', False) else ""
-        if result['success'] or result.get('from_cache', False):
-            response_time = result.get('response_time', 0.0)
-            logger.info(f"{service_config['name']}: {result['raw_status']} "
-                       f"(response time: {response_time:.2f}s){cache_note}")
-        else:
-            logger.warning(f"{service_config['name']}: Check failed ({result.get('raw_status', 'unknown')}), no cached data available - {result.get('error', 'Unknown error')}")
+        # Process results as they complete
+        for future in as_completed(future_to_service):
+            service_key, service_config = future_to_service[future]
+            try:
+                result_item = future.result()
+                results.append(result_item)
+            except Exception as e:
+                # Handle unexpected errors in the check function
+                logger.error(f"Unexpected error checking {service_config['name']} ({service_key}): {e}", exc_info=True)
+                # Create a failed result entry
+                results.append({
+                    'service_key': service_key,
+                    'service_config': service_config,
+                    'result': {
+                        'success': False,
+                        'status': None,
+                        'raw_status': 'unexpected_error',
+                        'status_text': 'Unexpected Error',
+                        'details': f"Unexpected error: {str(e)}",
+                        'response_time': 0.0,
+                        'error': str(e),
+                        'from_cache': False,
+                        'original_failure': None,
+                        'incident_metadata': [],
+                        'maintenance_metadata': [],
+                        'component_metadata': []
+                    }
+                })
+    
+    elapsed_time = time.time() - start_time
+    logger.info(f"Completed all service checks in {elapsed_time:.2f}s ({len(SERVICES)} services)")
     
     # Step 2: Clear existing gauge labels to remove stale metrics
     # This happens right before updating, minimizing the empty window
