@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.1.0...v2.2.0) (2025-12-03)
+
+
+### Features
+
+* add parallel processing for requests ([aa469f4](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/aa469f4f28e96f04e589100ca2b2c0d6e3b7dea6))
+
 ## [2.1.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.0.0...v2.1.0) (2025-12-01)
 
 
