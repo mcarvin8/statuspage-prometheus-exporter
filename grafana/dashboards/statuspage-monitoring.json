@@ -179,6 +179,7 @@
             "cellOptions": {
               "type": "color-text"
             },
+            "filterable": true,
             "inspect": false
           },
           "mappings": [],
@@ -450,7 +451,7 @@
                 "cellOptions": {
                   "type": "auto"
                 },
-                "filterable": false,
+                "filterable": true,
                 "inspect": true
               },
               "mappings": [],
@@ -458,7 +459,7 @@
                 "mode": "absolute",
                 "steps": [
                   {
-                    "color": "green"
+                    "color": "text"
                   },
                   {
                     "color": "red",
@@ -549,6 +550,40 @@
                     "value": 256
                   }
                 ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Active"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "0": {
+                            "color": "green",
+                            "index": 0,
+                            "text": "Resolved"
+                          },
+                          "1": {
+                            "color": "red",
+                            "index": 1,
+                            "text": "Active"
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
+                  }
+                ]
               }
             ]
           },
@@ -556,7 +591,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 94
+            "y": 33
           },
           "id": 11,
           "interval": "10m",
@@ -603,7 +638,10 @@
               "options": {
                 "fields": {
                   "Value": {
-                    "aggregations": []
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
                   },
                   "affected_components": {
                     "aggregations": [
@@ -660,6 +698,7 @@
                   "started_at (lastNotNull)": 3
                 },
                 "renameByName": {
+                  "Value (lastNotNull)": "Active",
                   "affected_components": "Affected Components",
                   "affected_components (lastNotNull)": "Affected Components",
                   "impact": "Impact",
@@ -757,7 +796,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 26
+            "y": 74
           },
           "id": 13,
           "interval": "5m",
@@ -928,7 +967,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 34
+            "y": 82
           },
           "id": 7,
           "interval": "10m",
@@ -1111,7 +1150,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 27
+            "y": 152
           },
           "id": 14,
           "interval": "5m",
@@ -1285,7 +1324,7 @@
             "h": 14,
             "w": 24,
             "x": 0,
-            "y": 28
+            "y": 153
           },
           "id": 18,
           "options": {
@@ -1410,7 +1449,7 @@
             "h": 14,
             "w": 24,
             "x": 0,
-            "y": 42
+            "y": 167
           },
           "id": 19,
           "options": {
