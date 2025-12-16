@@ -449,7 +449,8 @@
               "custom": {
                 "align": "auto",
                 "cellOptions": {
-                  "type": "auto"
+                  "type": "auto",
+                  "wrapText": true
                 },
                 "filterable": true,
                 "inspect": true
@@ -796,7 +797,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 74
+            "y": 42
           },
           "id": 13,
           "interval": "5m",
@@ -847,9 +848,10 @@
               "custom": {
                 "align": "auto",
                 "cellOptions": {
-                  "type": "auto"
+                  "type": "auto",
+                  "wrapText": true
                 },
-                "filterable": false,
+                "filterable": true,
                 "inspect": true
               },
               "mappings": [],
@@ -957,7 +959,41 @@
                 "properties": [
                   {
                     "id": "custom.width",
-                    "value": 712
+                    "value": 477
+                  }
+                ]
+              },
+              {
+                "matcher": {
+                  "id": "byName",
+                  "options": "Active"
+                },
+                "properties": [
+                  {
+                    "id": "mappings",
+                    "value": [
+                      {
+                        "options": {
+                          "0": {
+                            "color": "green",
+                            "index": 0,
+                            "text": "Closed / Completed"
+                          },
+                          "1": {
+                            "color": "orange",
+                            "index": 1,
+                            "text": "Active / Planned"
+                          }
+                        },
+                        "type": "value"
+                      }
+                    ]
+                  },
+                  {
+                    "id": "custom.cellOptions",
+                    "value": {
+                      "type": "color-text"
+                    }
                   }
                 ]
               }
@@ -967,7 +1003,7 @@
             "h": 8,
             "w": 24,
             "x": 0,
-            "y": 82
+            "y": 50
           },
           "id": 7,
           "interval": "10m",
@@ -1013,6 +1049,12 @@
               "id": "groupBy",
               "options": {
                 "fields": {
+                  "Value": {
+                    "aggregations": [
+                      "lastNotNull"
+                    ],
+                    "operation": "aggregate"
+                  },
                   "affected_components": {
                     "aggregations": [
                       "lastNotNull"
@@ -1068,6 +1110,7 @@
                   "shortlink": 1
                 },
                 "renameByName": {
+                  "Value (lastNotNull)": "Active",
                   "affected_components": "Affected Components",
                   "affected_components (lastNotNull)": "Affected Components",
                   "maintenance_id": "Maintenance ID",
@@ -1150,7 +1193,7 @@
             "h": 17,
             "w": 24,
             "x": 0,
-            "y": 152
+            "y": 317
           },
           "id": 14,
           "interval": "5m",
@@ -1324,7 +1367,7 @@
             "h": 14,
             "w": 24,
             "x": 0,
-            "y": 153
+            "y": 318
           },
           "id": 18,
           "options": {
@@ -1449,7 +1492,7 @@
             "h": 14,
             "w": 24,
             "x": 0,
-            "y": 167
+            "y": 332
           },
           "id": 19,
           "options": {
