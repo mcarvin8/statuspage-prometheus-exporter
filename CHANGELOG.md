@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.2.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.1...v2.2.2) (2026-01-29)
+
+
+### Bug Fixes
+
+* add default timezone to container (utc) ([1db9a0f](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/1db9a0f1fafa3bdb52882918d817fcea00f1e4d8))
+* add healthcheck to prometheus metrics port ([fec5b5f](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/fec5b5f85aac9b92851f997e2a38222ebba7813f))
+* add no install recommends flag to docker apt install ([c7c6806](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/c7c6806f15ea3383798bf843faef7e45742c99bb))
+* **cache:** log exceptions when deleting corrupted cache file ([8f17dd9](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/8f17dd9b7910df4d084c9dc8d97da35caad078ce))
+* **docker:** run container as non-root user to satisfy DS002 ([1a77cee](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/1a77cee9f9d0ed3f3aac8a20ec6bf9f1c60bedf2))
+
 ## [2.2.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.0...v2.2.1) (2025-12-03)
 
 
