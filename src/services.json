@@ -47,10 +47,6 @@
     "url": "https://status.fivetran.com/api/v2/summary.json",
     "name": "Fivetran"
   },
-  "glean": {
-    "url": "https://status.glean.com/api/v2/summary.json",
-    "name": "Glean"
-  },
   "boomi": {
     "url": "https://status.boomi.com/api/v2/summary.json",
     "name": "Boomi"
