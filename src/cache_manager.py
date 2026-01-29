@@ -154,8 +154,8 @@ def load_service_response(service_key: str) -> Optional[Dict[str, Any]]:
             if cache_file.exists():
                 cache_file.unlink()
                 logger.info(f"Removed corrupted cache file for {service_key}")
-        except Exception:
-            pass
+        except Exception as e:
+            logger.debug(f"Could not remove corrupted cache file for {service_key}: {e}")
         return None
 
     except Exception as e:
