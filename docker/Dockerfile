@@ -13,14 +13,15 @@ COPY LICENSE.md /app/statuspage-exporter/LICENSE.md
 COPY version.txt /app/statuspage-exporter/version.txt
 
 # Install Python and dependencies, create cache directory
-RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip python3-venv && \
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata python3 python3-pip python3-venv && \
     python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir prometheus_client requests apscheduler && \
     rm -rf /var/lib/apt/lists/* && \
     mkdir -p /app/statuspage-exporter/cache
 
-# Set the environment variables to use the venv
-ENV PATH="/opt/venv/bin:$PATH"
+# Set the environment variables to use the venv and default timezone
+ENV PATH="/opt/venv/bin:$PATH" \
+    TZ=UTC
 
 # Create non-root user for running the application
 RUN useradd --create-home --shell /bin/bash exporter && \
