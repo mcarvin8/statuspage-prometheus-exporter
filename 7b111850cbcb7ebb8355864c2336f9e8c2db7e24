@@ -1,0 +1,25 @@
+src/service_checker.py
+  92c3aa4882b512cc 133-169,171-251,253,255-281,283-284,287-404,406,408-409,445-446,448-449,451,454,459-463,465-468,472-473,485-487,491,498-500,516-517,536-537,539,542,547,550-557,560-562,565-571,574-580,583-589,592-598
+src/service_monitor.py
+  92c3aa4882b512cc 229-231,234-236,241,244-245,250,276,278,280-281,283-284,299-302,305-311,314-319,322-358,361-512,514-536,554-556,558
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.37",
+  "base_commit_sha": "7b111850cbcb7ebb8355864c2336f9e8c2db7e24",
+  "prompts": {
+    "92c3aa4882b512cc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ba87dd3a-c1d1-43ed-9284-e1f5bd70a1cc",
+        "model": "default"
+      },
+      "human_author": "Matt Carvin <90224411+mcarvin8@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 603,
+      "total_deletions": 1142,
+      "accepted_lines": 651,
+      "overriden_lines": 5
+    }
+  }
+}
