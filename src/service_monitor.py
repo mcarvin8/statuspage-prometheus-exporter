@@ -226,67 +226,33 @@ def normalize_timestamp(timestamp_str):
     return normalized
 
 
-def monitor_services(is_initial_run=False):
-    """
-    Monitor all configured services and update Prometheus metrics.
+def _load_previous_caches():
+    """Load cache for each service (before running checks)."""
+    return {key: load_service_response(key) for key in SERVICES.keys()}
 
-    Args:
-        is_initial_run: If True, clears all gauges to remove stale data from previous pod instances.
-                       If False, only clears response_time gauge (others updated selectively).
 
-    Process Flow:
-    1. Collect status check results for all services first
-    2. Clear existing Prometheus gauge labels to remove stale metrics
-    3. Immediately update all gauges with collected results
-
-    This minimizes the window where Prometheus might scrape empty gauges
-    by collecting all data before clearing and updating.
-    """
-    logger.info("Starting status page services monitoring...")
-
-    # Step 1: Collect all status check results first
-    # Load previous cache for each service BEFORE checking (to compare against old state)
-    # This is fast (file I/O) so we keep it sequential
-    previous_caches = {}
-    for service_key in SERVICES.keys():
-        previous_caches[service_key] = load_service_response(service_key)
-
-    # Step 2: Check all services in parallel for better performance
-    # Use ThreadPoolExecutor to make concurrent HTTP requests
-    # Limit concurrent requests to avoid overwhelming APIs or hitting OS limits
-    results = []
-    max_workers = min(
-        10, len(SERVICES)
-    )  # Limit to 10 concurrent requests or number of services, whichever is smaller
-
+def _run_checks_parallel():
+    """Run all service checks in parallel; return list of result items."""
+    max_workers = min(10, len(SERVICES))
     logger.info(
         f"Checking {len(SERVICES)} services with up to {max_workers} parallel requests..."
     )
     start_time = time.time()
-
+    results = []
     with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        # Submit all service checks to the thread pool
         future_to_service = {
-            executor.submit(check_service_with_fallback, service_key, service_config): (
-                service_key,
-                service_config,
-            )
-            for service_key, service_config in SERVICES.items()
+            executor.submit(check_service_with_fallback, sk, sc): (sk, sc)
+            for sk, sc in SERVICES.items()
         }
-
-        # Process results as they complete
         for future in as_completed(future_to_service):
             service_key, service_config = future_to_service[future]
             try:
-                result_item = future.result()
-                results.append(result_item)
+                results.append(future.result())
             except Exception as e:
-                # Handle unexpected errors in the check function
                 logger.error(
                     f"Unexpected error checking {service_config['name']} ({service_key}): {e}",
                     exc_info=True,
                 )
-                # Create a failed result entry
                 results.append(
                     {
                         "service_key": service_key,
@@ -307,16 +273,16 @@ def monitor_services(is_initial_run=False):
                         },
                     }
                 )
-
-    elapsed_time = time.time() - start_time
+    elapsed = time.time() - start_time
     logger.info(
-        f"Completed all service checks in {elapsed_time:.2f}s ({len(SERVICES)} services)"
+        f"Completed all service checks in {elapsed:.2f}s ({len(SERVICES)} services)"
     )
+    return results
 
-    # Step 2: Clear existing gauge labels to remove stale metrics
-    # This happens right before updating, minimizing the empty window
+
+def _clear_gauges(is_initial_run):
+    """Clear gauge labels (all on initial run, only dynamic gauges otherwise)."""
     if is_initial_run:
-        # On initial run, clear ALL gauges to remove stale data from previous pod instances
         logger.info(
             "Initial run detected - clearing all gauges to remove stale data from previous pod instances"
         )
@@ -329,555 +295,265 @@ def monitor_services(is_initial_run=False):
         statuspage_probe_check.clear()
         statuspage_application_timestamp.clear()
     else:
-        # On subsequent runs, clear dynamic gauges that always update (not cached)
         logger.debug("Clearing existing gauge labels before updating with new data...")
-        # statuspage_status_gauge is NOT cleared - updated selectively per service
-        statuspage_response_time_gauge.clear()  # Response time always updates (dynamic metric)
-        statuspage_component_timestamp.clear()  # Component timestamp always updates (dynamic metric)
-        statuspage_probe_check.clear()  # Probe check always updates (dynamic metric)
-        statuspage_application_timestamp.clear()  # Application timestamp always updates (dynamic metric)
-        # statuspage_incident_info is NOT cleared - updated selectively per service
-        # statuspage_maintenance_info is NOT cleared - updated selectively per service
-        # statuspage_component_status is NOT cleared - updated selectively per service
+        statuspage_response_time_gauge.clear()
+        statuspage_component_timestamp.clear()
+        statuspage_probe_check.clear()
+        statuspage_application_timestamp.clear()
 
-    # Step 3: Update all gauges with collected results
-    for item in results:
-        service_key = item["service_key"]
-        service_config = item["service_config"]
-        result = item["result"]
 
-        service_name = service_config["name"]
-        status_value = result.get("status")
-        status_text = result.get("status_text", "Unknown")
-        details = result.get("details", "No details available")
-        original_failure = result.get("original_failure")
-        from_cache = result.get("from_cache", False)
+def _update_probe_and_response_time(service_name, result, from_cache):
+    """Update probe_check and response_time gauges."""
+    probe_success = 1 if (result.get("success", False) or from_cache) else 0
+    statuspage_probe_check.labels(service_name=service_name).set(probe_success)
+    statuspage_response_time_gauge.labels(service_name=service_name).set(
+        result["response_time"]
+    )
 
-        logger.debug(
-            f"Updating gauge for {service_name}: status={status_value} ({status_text}), details='{details}', from_cache={from_cache}"
+
+def _update_status_and_app_timestamp(service_name, status_value, current_timestamp_ms):
+    """Update main status gauge and application timestamp."""
+    statuspage_status_gauge.labels(service_name=service_name).set(status_value)
+    statuspage_application_timestamp.labels(service_name=service_name).set(
+        current_timestamp_ms
+    )
+
+
+def _clear_resolved_incidents(service_name, resolved_ids, cached_by_id):
+    """Set incident_info gauge to 0 for resolved incident IDs using cached labels."""
+    for resolved_id in resolved_ids:
+        resolved_inc = cached_by_id.get(resolved_id, {})
+        resolved_name = resolved_inc.get("name", "Unknown")[:100]
+        resolved_affected = ", ".join(resolved_inc.get("affected_components", []))[:150]
+        resolved_impact = resolved_inc.get("impact", "unknown")
+        resolved_shortlink = resolved_inc.get("shortlink", "N/A")
+        resolved_started = normalize_timestamp(
+            resolved_inc.get("started_at", "unknown")
         )
+        statuspage_incident_info.labels(
+            service_name=service_name,
+            incident_id=resolved_id,
+            incident_name=resolved_name,
+            impact=resolved_impact,
+            shortlink=resolved_shortlink,
+            started_at=resolved_started,
+            affected_components=resolved_affected,
+        ).set(0)
 
-        # Update probe_check gauge - always update (not cached)
-        # 1 if check succeeded (success=True or from_cache=True), 0 if failed
-        probe_success = 1 if (result.get("success", False) or from_cache) else 0
-        statuspage_probe_check.labels(service_name=service_name).set(probe_success)
-        logger.debug(f"{service_name}: Set statuspage_probe_check to {probe_success}")
 
-        # Only update gauges if status check succeeded or returned a valid status
-        # Skip gauge updates for HTTPS request failures (status=None)
-        if status_value is not None:
-            # Get current timestamp in milliseconds for timestamps
-            current_timestamp_ms = int(time.time() * 1000)
+def _update_active_incidents(
+    service_name, incident_metadata, has_cache, cached_by_id, cached_ids
+):
+    """Update incident_info gauge for active incidents (and set 'none' when empty)."""
+    if incident_metadata:
+        for incident in incident_metadata:
+            incident_id = incident.get("id", "unknown")
+            if has_cache and incident_id in cached_ids:
+                cached_inc = cached_by_id.get(incident_id, {})
+                incident_name = cached_inc.get("name", "Unknown")[:100]
+                affected = ", ".join(cached_inc.get("affected_components", []))[:150]
+                impact = cached_inc.get("impact", "unknown")
+                shortlink = cached_inc.get("shortlink", "N/A")
+                started_at = normalize_timestamp(
+                    cached_inc.get("started_at", "unknown")
+                )
+            else:
+                incident_name = incident.get("name", "Unknown")[:100]
+                affected = ", ".join(incident.get("affected_components", []))[:150]
+                impact = incident.get("impact", "unknown")
+                shortlink = incident.get("shortlink", "N/A")
+                started_at = normalize_timestamp(incident.get("started_at", "unknown"))
+            statuspage_incident_info.labels(
+                service_name=service_name,
+                incident_id=incident_id,
+                incident_name=incident_name,
+                impact=impact,
+                shortlink=shortlink,
+                started_at=started_at,
+                affected_components=affected,
+            ).set(1)
+    else:
+        statuspage_incident_info.labels(
+            service_name=service_name,
+            incident_id="none",
+            incident_name="No Active Incidents",
+            impact="none",
+            shortlink="N/A",
+            started_at="N/A",
+            affected_components="N/A",
+        ).set(0)
 
-            # Update response time gauge - always update (dynamic metric)
-            statuspage_response_time_gauge.labels(service_name=service_name).set(
-                result["response_time"]
+
+def _clear_resolved_maintenance(service_name, resolved_ids, cached_by_id):
+    """Set maintenance_info gauge to 0 for resolved maintenance IDs using cached labels."""
+    for resolved_id in resolved_ids:
+        resolved_maint = cached_by_id.get(resolved_id, {})
+        resolved_name = resolved_maint.get("name", "Unknown")[:100]
+        resolved_affected = ", ".join(resolved_maint.get("affected_components", []))[
+            :150
+        ]
+        resolved_scheduled_start = normalize_timestamp(
+            resolved_maint.get("scheduled_start", "unknown")
+        )
+        resolved_scheduled_end = normalize_timestamp(
+            resolved_maint.get("scheduled_end", "unknown")
+        )
+        resolved_shortlink = resolved_maint.get("shortlink", "N/A")
+        statuspage_maintenance_info.labels(
+            service_name=service_name,
+            maintenance_id=resolved_id,
+            maintenance_name=resolved_name,
+            scheduled_start=resolved_scheduled_start,
+            scheduled_end=resolved_scheduled_end,
+            shortlink=resolved_shortlink,
+            affected_components=resolved_affected,
+        ).set(0)
+
+
+def _update_active_maintenance(service_name, maintenance_metadata):
+    """Update maintenance_info gauge for active maintenance (and set 'none' when empty)."""
+    if maintenance_metadata:
+        for maintenance in maintenance_metadata:
+            maintenance_name = maintenance.get("name", "Unknown")[:100]
+            affected = ", ".join(maintenance.get("affected_components", []))[:150]
+            maintenance_id = maintenance.get("id", "unknown")
+            scheduled_start = normalize_timestamp(
+                maintenance.get("scheduled_start", "unknown")
             )
-
-            # Update main status gauge - only when status changes
-            # Always update status gauge to keep metrics fresh in Prometheus
-            # Track changes for logging, but always update the gauge
-            cached_data = previous_caches.get(service_key)
-            has_cache = cached_data is not None
-
-            if has_cache:
-                cached_status = cached_data.get("status")
-                if cached_status != status_value:
-                    # Status changed
-                    logger.info(
-                        f"{service_name}: Status changed from {cached_status} to {status_value}"
-                    )
-                else:
-                    # Same status - but still updating gauge to keep it fresh
-                    logger.debug(
-                        f"{service_name}: Status unchanged ({status_value}), but updating gauge to keep metrics fresh in Prometheus"
-                    )
-            else:
-                # No cache exists - first run or cache cleared
-                logger.debug(
-                    f"{service_name}: No cache found - updating status gauge (first run or cache cleared)"
-                )
-
-            # Always update main status gauge - simplified to just service_name and status value
-            # All incident details are tracked separately in statuspage_incident_info
-            # Updating even when unchanged keeps metrics fresh in Prometheus and Grafana dashboards
-            statuspage_status_gauge.labels(service_name=service_name).set(status_value)
-            logger.debug(f"{service_name}: Updated status gauge to {status_value}")
-
-            # Update application timestamp gauge - always update (not cached)
-            # Timestamp of last update of overall application status
-            statuspage_application_timestamp.labels(service_name=service_name).set(
-                current_timestamp_ms
+            scheduled_end = normalize_timestamp(
+                maintenance.get("scheduled_end", "unknown")
             )
-            logger.debug(
-                f"{service_name}: Updated application_timestamp to {current_timestamp_ms}"
-            )
+            shortlink = maintenance.get("shortlink", "N/A")
+            statuspage_maintenance_info.labels(
+                service_name=service_name,
+                maintenance_id=maintenance_id,
+                maintenance_name=maintenance_name,
+                scheduled_start=scheduled_start,
+                scheduled_end=scheduled_end,
+                shortlink=shortlink,
+                affected_components=affected,
+            ).set(1)
+    else:
+        statuspage_maintenance_info.labels(
+            service_name=service_name,
+            maintenance_id="none",
+            maintenance_name="No Active Maintenance",
+            scheduled_start="N/A",
+            scheduled_end="N/A",
+            shortlink="N/A",
+            affected_components="N/A",
+        ).set(0)
 
-            # Always update incident metadata gauge to keep metrics fresh in Prometheus
-            # Compare current incidents with cached incidents for logging and label management
-            incident_metadata = result.get("incident_metadata", [])
 
-            # Use previous cache (from before this run) to compare incidents
-            # This ensures we compare against the OLD state, not the NEW state we just saved
-            cached_data = previous_caches.get(service_key)
-            has_cache = cached_data is not None
+def _clear_removed_components(service_name, removed_names):
+    """Set component_status to 0 for removed component names."""
+    for removed_name in removed_names:
+        statuspage_component_status.labels(
+            service_name=service_name, component_name=removed_name
+        ).set(0)
 
-            # Always update incident gauge to keep metrics fresh in Prometheus
-            # Track changes for logging, but always update the gauge
-            current_by_id = {}
-            cached_by_id = {}
-            current_ids = set()
-            cached_ids = set()
-            change_type = None  # Track what type of change occurred for logging
 
-            if has_cache:
-                cached_incidents = cached_data.get("incident_metadata", [])
+def _update_component_gauges(service_name, component_metadata):
+    """Update component_status and component_timestamp for each component."""
+    for component in component_metadata:
+        component_name = component.get("name", "Unknown")
+        component_status_value = component.get("status_value", 0)
+        statuspage_component_status.labels(
+            service_name=service_name, component_name=component_name
+        ).set(component_status_value)
+        component_timestamp_ms = int(time.time() * 1000)
+        statuspage_component_timestamp.labels(
+            service_name=service_name, component_name=component_name
+        ).set(component_timestamp_ms)
 
-                # Compare incident IDs to detect changes (for logging)
-                current_ids = {inc.get("id", "unknown") for inc in incident_metadata}
-                cached_ids = {inc.get("id", "unknown") for inc in cached_incidents}
 
-                # Build maps for label lookup
-                current_by_id = {
-                    inc.get("id", "unknown"): inc for inc in incident_metadata
-                }
-                cached_by_id = {
-                    inc.get("id", "unknown"): inc for inc in cached_incidents
-                }
+def _update_gauges_for_service(item, previous_caches):
+    """Update all gauges for one service result."""
+    service_key = item["service_key"]
+    service_config = item["service_config"]
+    result = item["result"]
+    service_name = service_config["name"]
+    status_value = result.get("status")
+    from_cache = result.get("from_cache", False)
 
-                if current_ids != cached_ids:
-                    # Different incident IDs - incidents added or resolved
-                    added_ids = current_ids - cached_ids
-                    removed_ids = cached_ids - current_ids
-                    if added_ids and removed_ids:
-                        change_type = "added_and_removed"
-                        logger.info(
-                            f"{service_name}: Incidents changed - added: {added_ids}, removed: {removed_ids}"
-                        )
-                    elif added_ids:
-                        change_type = "added"
-                        logger.info(
-                            f"{service_name}: New incident(s) detected: {added_ids}"
-                        )
-                    elif removed_ids:
-                        change_type = "removed"
-                        logger.info(
-                            f"{service_name}: Incident(s) resolved: {removed_ids}"
-                        )
-                else:
-                    # Same incident IDs - no changes (but still updating gauge to keep it fresh)
-                    logger.debug(
-                        f"{service_name}: Incidents unchanged, but updating gauge to keep metrics fresh in Prometheus"
-                    )
-            else:
-                # No cache exists - first run or cache cleared
-                logger.info(
-                    f"{service_name}: No cache found - updating incident gauge (first run or cache cleared)"
-                )
-                change_type = "no_cache"
+    _update_probe_and_response_time(service_name, result, from_cache)
 
-            # Always update incident gauge (even if unchanged) to keep metrics fresh in Prometheus
-            # This ensures Prometheus knows the metric is still active and it appears in Grafana dashboards
+    if status_value is None:
+        return
 
-            # Clear resolved incidents (in cache but not in current) - only if cache exists
-            # Always use cached labels to prevent duplicate alerts
-            if has_cache:
-                resolved_ids = cached_ids - current_ids
+    current_timestamp_ms = int(time.time() * 1000)
+    cached_data = previous_caches.get(service_key)
+    has_cache = cached_data is not None
 
-                # Clear resolved incidents using cached labels
-                if resolved_ids:
-                    logger.info(
-                        f"{service_name}: Clearing {len(resolved_ids)} resolved incident(s): {resolved_ids}"
-                    )
-                    for resolved_id in resolved_ids:
-                        resolved_inc = cached_by_id.get(resolved_id, {})
-                        # Use cached metadata to match the exact labels that were set
-                        resolved_name = resolved_inc.get("name", "Unknown")[:100]
-                        resolved_affected = ", ".join(
-                            resolved_inc.get("affected_components", [])
-                        )[:150]
-                        resolved_impact = resolved_inc.get("impact", "unknown")
-                        resolved_shortlink = resolved_inc.get("shortlink", "N/A")
-                        resolved_started = normalize_timestamp(
-                            resolved_inc.get("started_at", "unknown")
-                        )
+    _update_status_and_app_timestamp(service_name, status_value, current_timestamp_ms)
 
-                        statuspage_incident_info.labels(
-                            service_name=service_name,
-                            incident_id=resolved_id,
-                            incident_name=resolved_name,
-                            impact=resolved_impact,
-                            shortlink=resolved_shortlink,
-                            started_at=resolved_started,
-                            affected_components=resolved_affected,
-                        ).set(0)
+    incident_metadata = result.get("incident_metadata", [])
+    cached_incidents = (cached_data or {}).get("incident_metadata", [])
+    current_by_id = {inc.get("id", "unknown"): inc for inc in incident_metadata}
+    cached_by_id = {inc.get("id", "unknown"): inc for inc in cached_incidents}
+    current_ids = {inc.get("id", "unknown") for inc in incident_metadata}
+    cached_ids = {inc.get("id", "unknown") for inc in cached_incidents}
 
-                        logger.debug(
-                            f"{service_name}: Set resolved incident {resolved_id} to 0 using cached labels"
-                        )
+    if has_cache and (cached_ids - current_ids):
+        resolved_ids = cached_ids - current_ids
+        logger.info(
+            f"{service_name}: Clearing {len(resolved_ids)} resolved incident(s): {resolved_ids}"
+        )
+        _clear_resolved_incidents(service_name, resolved_ids, cached_by_id)
+    _update_active_incidents(
+        service_name, incident_metadata, has_cache, cached_by_id, cached_ids
+    )
 
-            # Update active incidents (always update, even if unchanged, to keep metrics fresh)
-            # For existing incidents (in cache), use cached labels to prevent duplicate alerts
-            # For new incidents (not in cache), use current labels
-            if incident_metadata:
-                logger.debug(
-                    f"{service_name}: Processing {len(incident_metadata)} incident(s) for incident_info gauge"
-                )
-                for idx, incident in enumerate(incident_metadata):
-                    incident_id = incident.get("id", "unknown")
+    maintenance_metadata = result.get("maintenance_metadata", [])
+    cached_maintenance = (cached_data or {}).get("maintenance_metadata", [])
+    current_maint_by_id = {m.get("id", "unknown"): m for m in maintenance_metadata}
+    cached_maint_by_id = {m.get("id", "unknown"): m for m in cached_maintenance}
+    current_maint_ids = {m.get("id", "unknown") for m in maintenance_metadata}
+    cached_maint_ids = {m.get("id", "unknown") for m in cached_maintenance}
 
-                    # Check if this incident exists in cache
-                    if has_cache and incident_id in cached_ids:
-                        # Use cached labels for existing incidents (don't update labels even if metadata changed)
-                        cached_inc = cached_by_id.get(incident_id, {})
-                        incident_name = cached_inc.get("name", "Unknown")[:100]
-                        affected = ", ".join(cached_inc.get("affected_components", []))[
-                            :150
-                        ]
-                        impact = cached_inc.get("impact", "unknown")
-                        shortlink = cached_inc.get("shortlink", "N/A")
-                        started_at = normalize_timestamp(
-                            cached_inc.get("started_at", "unknown")
-                        )
+    if has_cache and (cached_maint_ids - current_maint_ids):
+        resolved_maint_ids = cached_maint_ids - current_maint_ids
+        logger.info(
+            f"{service_name}: Clearing {len(resolved_maint_ids)} resolved maintenance event(s): {resolved_maint_ids}"
+        )
+        _clear_resolved_maintenance(
+            service_name, resolved_maint_ids, cached_maint_by_id
+        )
+    _update_active_maintenance(service_name, maintenance_metadata)
 
-                        logger.debug(
-                            f"{service_name}: Incident {incident_id} exists in cache - using cached labels (updating gauge to keep fresh)"
-                        )
-                    else:
-                        # New incident - use current labels
-                        incident_name = incident.get("name", "Unknown")[:100]
-                        affected = ", ".join(incident.get("affected_components", []))[
-                            :150
-                        ]
-                        impact = incident.get("impact", "unknown")
-                        shortlink = incident.get("shortlink", "N/A")
-                        started_at = normalize_timestamp(
-                            incident.get("started_at", "unknown")
-                        )
+    component_metadata = result.get("component_metadata", [])
+    cached_components = (cached_data or {}).get("component_metadata", [])
+    current_names = {comp.get("name", "Unknown") for comp in component_metadata}
+    cached_names = {comp.get("name", "Unknown") for comp in cached_components}
+    removed_names = cached_names - current_names
+    if has_cache and removed_names:
+        logger.info(
+            f"{service_name}: Clearing {len(removed_names)} removed component(s): {removed_names}"
+        )
+        _clear_removed_components(service_name, removed_names)
+    _update_component_gauges(service_name, component_metadata)
 
-                        logger.debug(
-                            f"{service_name}: New incident {incident_id} - using current labels"
-                        )
 
-                    logger.debug(f"{service_name}: Incident #{idx+1} details:")
-                    logger.debug(f"  - ID: {incident_id}")
-                    logger.debug(f"  - Name: {incident_name}")
-                    logger.debug(f"  - Impact: {impact}")
-                    logger.debug(f"  - Shortlink: {shortlink}")
-                    logger.debug(f"  - Started: {started_at}")
-                    logger.debug(f"  - Affected: {affected}")
+def monitor_services(is_initial_run=False):
+    """
+    Monitor all configured services and update Prometheus metrics.
 
-                    statuspage_incident_info.labels(
-                        service_name=service_name,
-                        incident_id=incident_id,
-                        incident_name=incident_name,
-                        impact=impact,
-                        shortlink=shortlink,
-                        started_at=started_at,
-                        affected_components=affected,
-                    ).set(1)
+    Args:
+        is_initial_run: If True, clears all gauges to remove stale data from previous pod instances.
+                       If False, only clears response_time gauge (others updated selectively).
 
-                    logger.debug(
-                        f"{service_name}: Set statuspage_incident_info gauge to 1 for incident {incident_id}"
-                    )
+    Process Flow:
+    1. Collect status check results for all services first
+    2. Clear existing Prometheus gauge labels to remove stale metrics
+    3. Immediately update all gauges with collected results
 
-                logger.info(
-                    f"{service_config['name']}: {len(incident_metadata)} active incident(s) tracked in incident_info gauge"
-                )
-            else:
-                # Set gauge to 0 when there are no incidents to always show service status
-                logger.debug(
-                    f"{service_name}: No incident metadata - setting statuspage_incident_info gauge to 0"
-                )
-                statuspage_incident_info.labels(
-                    service_name=service_name,
-                    incident_id="none",
-                    incident_name="No Active Incidents",
-                    impact="none",
-                    shortlink="N/A",
-                    started_at="N/A",
-                    affected_components="N/A",
-                ).set(0)
-
-            # Always update maintenance metadata gauge to keep metrics fresh in Prometheus
-            # Track changes for logging, but always update the gauge
-            maintenance_metadata = result.get("maintenance_metadata", [])
-
-            # Use previous cache (from before this run) to compare maintenance
-            # This ensures we compare against the OLD state, not the NEW state we just saved
-            cached_data = previous_caches.get(service_key)
-            has_cache = cached_data is not None
-
-            # Track changes for logging
-            current_by_id = {}
-            cached_by_id = {}
-            current_ids = set()
-            cached_ids = set()
-            change_type = None  # Track what type of change occurred for logging
-
-            if has_cache:
-                cached_maintenance = cached_data.get("maintenance_metadata", [])
-
-                # Compare maintenance IDs to detect changes (for logging)
-                current_ids = {
-                    maint.get("id", "unknown") for maint in maintenance_metadata
-                }
-                cached_ids = {
-                    maint.get("id", "unknown") for maint in cached_maintenance
-                }
-
-                # Build maps for label lookup
-                current_by_id = {
-                    maint.get("id", "unknown"): maint for maint in maintenance_metadata
-                }
-                cached_by_id = {
-                    maint.get("id", "unknown"): maint for maint in cached_maintenance
-                }
-
-                if current_ids != cached_ids:
-                    # Different maintenance IDs - maintenance changed (added or resolved)
-                    added_ids = current_ids - cached_ids
-                    removed_ids = cached_ids - current_ids
-                    if added_ids and removed_ids:
-                        change_type = "added_and_removed"
-                        logger.info(
-                            f"{service_name}: Maintenance changed - added: {added_ids}, removed: {removed_ids}"
-                        )
-                    elif added_ids:
-                        change_type = "added"
-                        logger.info(
-                            f"{service_name}: New maintenance event(s) detected: {added_ids}"
-                        )
-                    elif removed_ids:
-                        change_type = "removed"
-                        logger.info(
-                            f"{service_name}: Maintenance event(s) resolved: {removed_ids}"
-                        )
-                else:
-                    # Same maintenance IDs - no changes (but still updating gauge to keep it fresh)
-                    logger.debug(
-                        f"{service_name}: Maintenance unchanged, but updating gauge to keep metrics fresh in Prometheus"
-                    )
-            else:
-                # No cache exists - first run or cache cleared
-                logger.info(
-                    f"{service_name}: No cache found - updating maintenance gauge (first run or cache cleared)"
-                )
-                change_type = "no_cache"
-
-            # Always update maintenance gauge (even if unchanged) to keep metrics fresh in Prometheus
-            # This ensures Prometheus knows the metric is still active and it appears in Grafana dashboards
-
-            # Clear resolved maintenance (in cache but not in current) - only if cache exists
-            if has_cache:
-                resolved_ids = cached_ids - current_ids
-
-                if resolved_ids:
-                    logger.info(
-                        f"{service_name}: Clearing {len(resolved_ids)} resolved maintenance event(s): {resolved_ids}"
-                    )
-                    for resolved_id in resolved_ids:
-                        resolved_maint = cached_by_id.get(resolved_id, {})
-                        # Use cached metadata to match the exact labels that were set
-                        resolved_name = resolved_maint.get("name", "Unknown")[:100]
-                        resolved_affected = ", ".join(
-                            resolved_maint.get("affected_components", [])
-                        )[:150]
-                        resolved_scheduled_start = normalize_timestamp(
-                            resolved_maint.get("scheduled_start", "unknown")
-                        )
-                        resolved_scheduled_end = normalize_timestamp(
-                            resolved_maint.get("scheduled_end", "unknown")
-                        )
-                        resolved_shortlink = resolved_maint.get("shortlink", "N/A")
-
-                        statuspage_maintenance_info.labels(
-                            service_name=service_name,
-                            maintenance_id=resolved_id,
-                            maintenance_name=resolved_name,
-                            scheduled_start=resolved_scheduled_start,
-                            scheduled_end=resolved_scheduled_end,
-                            shortlink=resolved_shortlink,
-                            affected_components=resolved_affected,
-                        ).set(0)
-
-                        logger.debug(
-                            f"{service_name}: Set resolved maintenance {resolved_id} to 0"
-                        )
-
-            # Update current active maintenance (always update, even if unchanged, to keep metrics fresh)
-            if maintenance_metadata:
-                logger.debug(
-                    f"{service_name}: Processing {len(maintenance_metadata)} maintenance event(s) for maintenance_info gauge"
-                )
-                for idx, maintenance in enumerate(maintenance_metadata):
-                    # Truncate fields to avoid excessive cardinality
-                    maintenance_name = maintenance.get("name", "Unknown")[:100]
-                    affected = ", ".join(maintenance.get("affected_components", []))[
-                        :150
-                    ]
-                    maintenance_id = maintenance.get("id", "unknown")
-                    scheduled_start = normalize_timestamp(
-                        maintenance.get("scheduled_start", "unknown")
-                    )
-                    scheduled_end = normalize_timestamp(
-                        maintenance.get("scheduled_end", "unknown")
-                    )
-                    shortlink = maintenance.get("shortlink", "N/A")
-
-                    logger.debug(f"{service_name}: Maintenance #{idx+1} details:")
-                    logger.debug(f"  - ID: {maintenance_id}")
-                    logger.debug(f"  - Name: {maintenance_name}")
-                    logger.debug(f"  - Scheduled: {scheduled_start} to {scheduled_end}")
-                    logger.debug(f"  - Shortlink: {shortlink}")
-                    logger.debug(f"  - Affected: {affected}")
-
-                    statuspage_maintenance_info.labels(
-                        service_name=service_name,
-                        maintenance_id=maintenance_id,
-                        maintenance_name=maintenance_name,
-                        scheduled_start=scheduled_start,
-                        scheduled_end=scheduled_end,
-                        shortlink=shortlink,
-                        affected_components=affected,
-                    ).set(1)
-
-                    logger.debug(
-                        f"{service_name}: Set statuspage_maintenance_info gauge to 1 for maintenance {maintenance_id}"
-                    )
-
-                logger.info(
-                    f"{service_config['name']}: {len(maintenance_metadata)} active maintenance event(s) tracked in maintenance_info gauge"
-                )
-            else:
-                # Set gauge to 0 when there are no maintenance events to always show service status
-                logger.debug(
-                    f"{service_name}: No maintenance metadata - setting statuspage_maintenance_info gauge to 0"
-                )
-                statuspage_maintenance_info.labels(
-                    service_name=service_name,
-                    maintenance_id="none",
-                    maintenance_name="No Active Maintenance",
-                    scheduled_start="N/A",
-                    scheduled_end="N/A",
-                    shortlink="N/A",
-                    affected_components="N/A",
-                ).set(0)
-
-            # Always update component status gauge to keep metrics fresh in Prometheus
-            # Track changes for logging, but always update the gauge
-            component_metadata = result.get("component_metadata", [])
-
-            # Use previous cache (from before this run) to compare components
-            cached_data = previous_caches.get(service_key)
-            has_cache = cached_data is not None
-
-            if has_cache:
-                cached_components = cached_data.get("component_metadata", [])
-
-                # Compare components by name and status value (for logging)
-                current_components = {
-                    (comp.get("name", "Unknown"), comp.get("status_value", 0))
-                    for comp in component_metadata
-                }
-                cached_components_set = {
-                    (comp.get("name", "Unknown"), comp.get("status_value", 0))
-                    for comp in cached_components
-                }
-
-                if current_components != cached_components_set:
-                    # Components changed (added, removed, or status changed)
-                    added = current_components - cached_components_set
-                    removed = cached_components_set - current_components
-                    if added or removed:
-                        logger.info(
-                            f"{service_name}: Components changed - added/updated: {added}, removed: {removed}"
-                        )
-                else:
-                    # Same components with same status - but still updating gauge to keep it fresh
-                    logger.debug(
-                        f"{service_name}: Components unchanged, but updating gauge to keep metrics fresh in Prometheus"
-                    )
-            else:
-                # No cache exists - first run or cache cleared
-                logger.debug(
-                    f"{service_name}: No cache found - updating component gauge (first run or cache cleared)"
-                )
-
-            # Always update component gauge (even if unchanged) to keep metrics fresh in Prometheus
-            # This ensures Prometheus knows the metric is still active and it appears in Grafana dashboards
-
-            # Clear removed components (in cache but not in current) - only if cache exists
-            if has_cache:
-                cached_components = cached_data.get("component_metadata", [])
-                current_names = {
-                    comp.get("name", "Unknown") for comp in component_metadata
-                }
-                cached_names = {
-                    comp.get("name", "Unknown") for comp in cached_components
-                }
-                removed_names = cached_names - current_names
-
-                if removed_names:
-                    logger.info(
-                        f"{service_name}: Clearing {len(removed_names)} removed component(s): {removed_names}"
-                    )
-                    cached_by_name = {
-                        comp.get("name", "Unknown"): comp for comp in cached_components
-                    }
-                    for removed_name in removed_names:
-                        removed_comp = cached_by_name.get(removed_name, {})
-                        statuspage_component_status.labels(
-                            service_name=service_name, component_name=removed_name
-                        ).set(
-                            0
-                        )  # Set removed components to 0
-                        # Note: component_timestamp is cleared automatically when gauge is cleared each run
-                        logger.debug(
-                            f"{service_name}: Set removed component {removed_name} to 0"
-                        )
-
-            # Update current components (always update, even if unchanged, to keep metrics fresh)
-            if component_metadata:
-                logger.debug(
-                    f"{service_name}: Processing {len(component_metadata)} component(s) for component_status gauge"
-                )
-                for idx, component in enumerate(component_metadata):
-                    component_name = component.get("name", "Unknown")
-                    component_status_value = component.get("status_value", 0)
-                    component_status_text = component.get("status", "unknown")
-
-                    logger.debug(f"{service_name}: Component #{idx+1} details:")
-                    logger.debug(f"  - Name: {component_name}")
-                    logger.debug(
-                        f"  - Status: {component_status_text} (value: {component_status_value})"
-                    )
-
-                    statuspage_component_status.labels(
-                        service_name=service_name, component_name=component_name
-                    ).set(component_status_value)
-
-                    # Update component timestamp gauge - always update (not cached)
-                    # Timestamp of last update of this component
-                    component_timestamp_ms = int(time.time() * 1000)
-                    statuspage_component_timestamp.labels(
-                        service_name=service_name, component_name=component_name
-                    ).set(component_timestamp_ms)
-
-                    logger.debug(
-                        f"{service_name}: Set statuspage_component_status gauge to {component_status_value} for component '{component_name}'"
-                    )
-                    logger.debug(
-                        f"{service_name}: Set statuspage_component_timestamp to {component_timestamp_ms} for component '{component_name}'"
-                    )
-
-                logger.info(
-                    f"{service_config['name']}: {len(component_metadata)} component(s) tracked in component_status gauge"
-                )
-            else:
-                logger.debug(
-                    f"{service_name}: No component metadata - components may have been cleared"
-                )
-        # Note: Failed checks are logged but not tracked in metrics (check logs for failure details)
-
+    This minimizes the window where Prometheus might scrape empty gauges
+    by collecting all data before clearing and updating.
+    """
+    logger.info("Starting status page services monitoring...")
+    previous_caches = _load_previous_caches()
+    results = _run_checks_parallel()
+    _clear_gauges(is_initial_run)
+    for item in results:
+        _update_gauges_for_service(item, previous_caches)
     logger.info("Status page monitoring completed")
