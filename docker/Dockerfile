@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
 # Set working directory
 WORKDIR /app/statuspage-exporter
@@ -31,3 +31,7 @@ USER exporter
 # Run the application
 ENTRYPOINT ["python3", "status_monitoring.py"]
 EXPOSE 9001
+
+# Health check: verify metrics endpoint responds (uses METRICS_PORT env, default 9001)
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD python3 -c "import os, urllib.request; port = os.environ.get('METRICS_PORT', '9001'); urllib.request.urlopen(f'http://localhost:{port}/metrics')" || exit 1
