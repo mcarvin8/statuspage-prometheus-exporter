@@ -1,0 +1,23 @@
+src/cache_manager.py
+  92c3aa4882b512cc 157-158
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.0.37",
+  "base_commit_sha": "8f17dd9b7910df4d084c9dc8d97da35caad078ce",
+  "prompts": {
+    "92c3aa4882b512cc": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "ba87dd3a-c1d1-43ed-9284-e1f5bd70a1cc",
+        "model": "default"
+      },
+      "human_author": "Matt Carvin <90224411+mcarvin8@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 2,
+      "total_deletions": 2,
+      "accepted_lines": 2,
+      "overriden_lines": 0
+    }
+  }
+}
