@@ -64,6 +64,7 @@ Error Handling:
 """
 
 import json
+import os
 import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -73,9 +74,6 @@ from typing import Dict, Any
 from cache_manager import save_service_response, load_service_response
 
 logger = logging.getLogger(__name__)
-
-# Load services configuration
-import os
 
 # Allow services.json to be specified via environment variable (useful for Docker)
 config_path = os.getenv(
