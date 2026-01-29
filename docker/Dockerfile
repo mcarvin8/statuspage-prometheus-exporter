@@ -13,7 +13,7 @@ COPY LICENSE.md /app/statuspage-exporter/LICENSE.md
 COPY version.txt /app/statuspage-exporter/version.txt
 
 # Install Python and dependencies, create cache directory
-RUN apt-get update && apt-get install -y python3 python3-pip python3-venv && \
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip python3-venv && \
     python3 -m venv /opt/venv && \
     /opt/venv/bin/pip install --no-cache-dir prometheus_client requests apscheduler && \
     rm -rf /var/lib/apt/lists/* && \
