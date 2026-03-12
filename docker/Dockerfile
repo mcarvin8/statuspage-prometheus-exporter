@@ -23,11 +23,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends tzdata python3 
 ENV PATH="/opt/venv/bin:$PATH" \
     TZ=UTC
 
-# Create non-root user for running the application
-RUN useradd --create-home --shell /bin/bash exporter && \
+# Create non-root user for running the application (numeric UID for Kubernetes runAsNonRoot)
+ARG EXPORTER_UID=1000
+RUN useradd --uid ${EXPORTER_UID} --create-home --shell /bin/bash exporter && \
     chown -R exporter:exporter /app/statuspage-exporter /opt/venv
 
-USER exporter
+# Use numeric UID so Kubernetes can verify non-root when runAsNonRoot is set
+USER ${EXPORTER_UID}
 
 # Run the application
 ENTRYPOINT ["python3", "status_monitoring.py"]
