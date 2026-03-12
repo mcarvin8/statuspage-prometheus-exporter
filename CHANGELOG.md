@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.2.3](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.2...v2.2.3) (2026-03-12)
+
+
+### Bug Fixes
+
+* **docker:** use numeric UID for USER so Kubernetes runAsNonRoot can verify non-root ([e2de9e7](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/e2de9e7d6dbf53567d84adb25c4197e716f555c1))
+
 ## [2.2.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.1...v2.2.2) (2026-01-29)
 
 
