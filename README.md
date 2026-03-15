@@ -21,7 +21,7 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
 - [Integration with Prometheus](#integration-with-prometheus)
   - [Prometheus Alerting Rules](#prometheus-alerting-rules)
 - [Monitoring Schedule](#monitoring-schedule)
-- [Requirements](#requirements)
+- [Container Requirements](#container-requirements)
 
 ## Features
 
@@ -214,7 +214,7 @@ export CHECK_INTERVAL_MINUTES=10
 export CHECK_INTERVAL_MINUTES=30
 ```
 
-## Requirements
+## Container Requirements
 
 - Python 3.6+
 - Dependencies:
