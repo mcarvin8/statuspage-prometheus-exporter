@@ -6,7 +6,7 @@ on:
       - main
     paths:
       - 'README.md'
-      - '.gitlab/workflows/sync-docker-readme.yml'
+      - '.github/workflows/sync-docker-readme.yml'
 
 
 jobs:
