@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.3...v2.3.0) (2026-03-17)
+
+
+### Features
+
+* optional Slack webhook for per-incident open/resolve notifications ([1d77f8b](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/1d77f8bdcace1caaebfc4ef27bf6837c7bb008d5))
+
 ## [2.2.3](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.2...v2.2.3) (2026-03-12)
 
 
