@@ -30,6 +30,7 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
 - **Maintenance Windows**: Tracks scheduled and active maintenance events
 - **Response Time Metrics**: Records API response times for each status check
 - **Prometheus Metrics**: Exposes standard Prometheus metrics on configurable port
+- **Optional Slack alerts**: Incoming webhook posts when an incident opens or resolves (see below)
 
 ## Metrics Exposed
 
@@ -128,6 +129,11 @@ Each service requires:
 - `CHECK_INTERVAL_MINUTES`: Interval in minutes between status checks (default: `20`)
 - `DEBUG`: Enable debug logging (set to `true` to enable, default: `false`/INFO level)
 - `CLEAR_CACHE`: Clear all cache files on startup (set to `true` to enable, default: `false`)
+- `SLACK_WEBHOOK_URL`: Optional [Slack incoming webhook](https://api.slack.com/messaging/webhooks) URL. When set, the exporter posts to Slack when:
+  - **Incident opened**: A new active incident appears compared to the previous successful check (skipped on first run for a service so existing incidents are not spammed).
+  - **Incident resolved**: An incident that was active on the last check is no longer in the active list.
+
+  Webhook calls run in the background (short timeout) so checks are not blocked. Leave unset to disable.
 
 ## Docker Setup
 
@@ -158,6 +164,17 @@ docker run -d \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
   -e CHECK_INTERVAL_MINUTES=20 \
   -e DEBUG=true \
+  mcarvin8/statuspage-prometheus-exporter:latest
+```
+
+#### Slack incident notifications
+
+```bash
+docker run -d \
+  --name statuspage-exporter \
+  -p 9001:9001 \
+  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 

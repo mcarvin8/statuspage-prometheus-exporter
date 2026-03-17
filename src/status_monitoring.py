@@ -29,6 +29,7 @@ Environment Variables:
     - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20)
     - DEBUG: Enable debug logging (set to 'true' to enable, default: false/INFO level)
     - CLEAR_CACHE: Clear all cache files on startup (set to 'true' to enable, default: false)
+    - SLACK_WEBHOOK_URL: Optional Slack incoming webhook for incident opened/resolved posts
 
 Functions:
     - schedule_tasks: Configures APScheduler jobs

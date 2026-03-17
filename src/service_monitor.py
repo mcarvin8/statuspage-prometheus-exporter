@@ -129,6 +129,7 @@ from gauges import (
     statuspage_application_timestamp,
 )
 from cache_manager import load_service_response
+from slack_notify import notify_incident_opened, notify_incident_resolved
 
 logger = logging.getLogger(__name__)
 
@@ -499,7 +500,23 @@ def _update_gauges_for_service(item, previous_caches):
         logger.info(
             f"{service_name}: Clearing {len(resolved_ids)} resolved incident(s): {resolved_ids}"
         )
+        for rid in resolved_ids:
+            notify_incident_resolved(
+                service_name, cached_by_id.get(rid, {"id": rid, "name": "Unknown"})
+            )
         _clear_resolved_incidents(service_name, resolved_ids, cached_by_id)
+
+    # Only announce new incidents on a live API response (not fallback cache)
+    if (
+        has_cache
+        and not from_cache
+        and (current_ids - cached_ids)
+    ):
+        new_ids = current_ids - cached_ids
+        for nid in new_ids:
+            inc = current_by_id.get(nid)
+            if inc and nid != "none":
+                notify_incident_opened(service_name, inc)
     _update_active_incidents(
         service_name, incident_metadata, has_cache, cached_by_id, cached_ids
     )
