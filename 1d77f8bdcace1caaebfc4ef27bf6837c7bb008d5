@@ -1,0 +1,29 @@
+src/slack_notify.py
+  3d5b17f69d72c75a 1-127
+src/service_monitor.py
+  3d5b17f69d72c75a 132,503-506,508-519
+src/status_monitoring.py
+  3d5b17f69d72c75a 32
+README.md
+  3d5b17f69d72c75a 33,132-136,170-180
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.1.12",
+  "base_commit_sha": "1d77f8bdcace1caaebfc4ef27bf6837c7bb008d5",
+  "prompts": {
+    "3d5b17f69d72c75a": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "dc2b4608-a463-4e71-b59a-c4148ed90a9d",
+        "model": "default"
+      },
+      "human_author": "Matt Carvin <90224411+mcarvin8@users.noreply.github.com>",
+      "messages": [],
+      "total_additions": 180,
+      "total_deletions": 3,
+      "accepted_lines": 162,
+      "overriden_lines": 0
+    }
+  }
+}
