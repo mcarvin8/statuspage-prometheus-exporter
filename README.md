@@ -17,8 +17,6 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
   - [Service Configuration](#service-configuration)
   - [Environment Variables](#environment-variables)
 - [Docker Setup](#docker-setup)
-- [Monitoring Schedule](#monitoring-schedule)
-- [Container Requirements](#container-requirements)
 
 ## Features
 
@@ -172,27 +170,3 @@ docker run -d \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
-
-## Monitoring Schedule
-
-The exporter performs status checks:
-- **Initial check**: Executes immediately on startup
-- **Scheduled checks**: Configurable interval via `CHECK_INTERVAL_MINUTES` environment variable (default: 20 minutes)
-
-You can customize the check interval by setting the `CHECK_INTERVAL_MINUTES` environment variable:
-
-```bash
-# Run checks every 10 minutes
-export CHECK_INTERVAL_MINUTES=10
-
-# Run checks every 30 minutes
-export CHECK_INTERVAL_MINUTES=30
-```
-
-## Container Requirements
-
-- Python 3.6+
-- Dependencies:
-  - `prometheus_client`
-  - `requests`
-  - `apscheduler`
