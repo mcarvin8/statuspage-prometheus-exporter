@@ -13,10 +13,7 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
 - [Metric Caching Strategy](#metric-caching-strategy)
   - [Cached Metrics (Update Only on Change)](#cached-metrics-update-only-on-change)
   - [Non-Cached Metric (Always Updates)](#non-cached-metric-always-updates)
-- [Configuration](#configuration)
-  - [Service Configuration](#service-configuration)
-  - [Environment Variables](#environment-variables)
-- [Docker Setup](#docker-setup)
+- [Run with Docker](#run-with-docker)
 
 ## Features
 
@@ -98,11 +95,13 @@ The cache is used for two purposes:
 - Maintains metric continuity even when individual API requests fail (falls back to cached data)
 - Reduces unnecessary cache writes by only updating when meaningful data changes
 
-## Configuration
+## Run with Docker
 
-### Service Configuration
+The usual way to run the exporter is the published image on [Docker Hub](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter): configure **`services.json`**, mount it into the container, then add **optional environment variables** as needed.
 
-Configure the services you want to monitor in `services.json`:
+### 1. Create `services.json`
+
+Define each status page you want to monitor. The image ships with `services.json.example` as a template.
 
 ```json
 {
@@ -113,32 +112,14 @@ Configure the services you want to monitor in `services.json`:
 }
 ```
 
-Each service requires:
-- `url`: The full URL to the Status Page.io API summary endpoint (typically `/api/v2/summary.json`)
-- `name`: Display name for the service in metrics
+| Field | Description |
+|-------|-------------|
+| `url` | Full URL to the Statuspage API summary (typically `…/api/v2/summary.json`). |
+| `name` | Label used in Prometheus metrics for this app. |
 
-### Environment Variables
+### 2. Run the container (minimum)
 
-- `METRICS_PORT`: Port for Prometheus metrics server (default: `9001`)
-- `SERVICES_JSON_PATH`: Custom path to `services.json` file (default: `/app/statuspage-exporter/services.json`)
-- `CHECK_INTERVAL_MINUTES`: Interval in minutes between status checks (default: `20`)
-- `DEBUG`: Enable debug logging (set to `true` to enable, default: `false`/INFO level)
-- `CLEAR_CACHE`: Clear all cache files on startup (set to `true` to enable, default: `false`)
-- `SLACK_WEBHOOK_URL`: Optional [Slack incoming webhook](https://api.slack.com/messaging/webhooks) URL. When set, the exporter posts to Slack when:
-  - **Incident opened**: A new active incident appears compared to the previous successful check (skipped on first run for a service so existing incidents are not spammed).
-  - **Incident resolved**: An incident that was active on the last check is no longer in the active list.
-
-  Webhook calls run in the background (short timeout) so checks are not blocked. Leave unset to disable.
-
-## Docker Setup
-
-The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter):
-
-**Required**: You **must** mount your own `services.json` file for the exporter to work. The image includes a `services.json.example` file as a template, but you must create your own configuration file with the services you want to monitor.
-
-**Optional**: Environment variables can be set to customize behavior. See the [Environment Variables](#environment-variables) section above for available options and their defaults.
-
-### Minimal Required Setup
+You **must** mount your `services.json` to the path below (or set `SERVICES_JSON_PATH` to match where you mount it). Metrics are served on **9001** by default.
 
 ```bash
 docker run -d \
@@ -148,25 +129,28 @@ docker run -d \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
-### With Optional Environment Variables
+### 3. Optional environment variables
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `METRICS_PORT` | `9001` | Port for the Prometheus metrics HTTP server. |
+| `SERVICES_JSON_PATH` | `/app/statuspage-exporter/services.json` | Path to `services.json` *inside* the container (change if you mount elsewhere). |
+| `CHECK_INTERVAL_MINUTES` | `20` | Minutes between status checks. |
+| `DEBUG` | off | Set to `true` for debug logging. |
+| `CLEAR_CACHE` | off | Set to `true` to delete cache files on startup. |
+| `SLACK_WEBHOOK_URL` | _(unset)_ | Optional [Slack incoming webhook](https://api.slack.com/messaging/webhooks). When set, sends one message per **new** incident and per **resolved** incident (not one message per app). Posts are async; omit the variable to disable Slack. |
+
+### 4. Example with common options
+
+Combine flags as needed—for example, faster checks, debug logs, and Slack:
 
 ```bash
 docker run -d \
   --name statuspage-exporter \
   -p 9001:9001 \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
-  -e CHECK_INTERVAL_MINUTES=20 \
+  -e CHECK_INTERVAL_MINUTES=10 \
   -e DEBUG=true \
-  mcarvin8/statuspage-prometheus-exporter:latest
-```
-
-### Slack incident notifications
-
-```bash
-docker run -d \
-  --name statuspage-exporter \
-  -p 9001:9001 \
-  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
