@@ -132,7 +132,7 @@ Each service requires:
 
 ## Docker Setup
 
-The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/repository/docker/mcarvin8/statuspage-prometheus-exporter):
+The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter):
 
 **Required**: You **must** mount your own `services.json` file for the exporter to work. The image includes a `services.json.example` file as a template, but you must create your own configuration file with the services you want to monitor.
 
