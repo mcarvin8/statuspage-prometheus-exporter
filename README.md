@@ -17,7 +17,6 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
   - [Service Configuration](#service-configuration)
   - [Environment Variables](#environment-variables)
 - [Docker Setup](#docker-setup)
-  - [Using the Published Docker Image](#using-the-published-docker-image)
 - [Monitoring Schedule](#monitoring-schedule)
 - [Container Requirements](#container-requirements)
 
@@ -135,15 +134,13 @@ Each service requires:
 
 ## Docker Setup
 
-### Using the Published Docker Image
-
 The easiest way to use this exporter is with the published Docker image from [Docker Hub](https://hub.docker.com/repository/docker/mcarvin8/statuspage-prometheus-exporter):
 
 **Required**: You **must** mount your own `services.json` file for the exporter to work. The image includes a `services.json.example` file as a template, but you must create your own configuration file with the services you want to monitor.
 
 **Optional**: Environment variables can be set to customize behavior. See the [Environment Variables](#environment-variables) section above for available options and their defaults.
 
-#### Minimal Required Setup
+### Minimal Required Setup
 
 ```bash
 docker run -d \
@@ -153,7 +150,7 @@ docker run -d \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
-#### With Optional Environment Variables
+### With Optional Environment Variables
 
 ```bash
 docker run -d \
@@ -165,7 +162,7 @@ docker run -d \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
-#### Slack incident notifications
+### Slack incident notifications
 
 ```bash
 docker run -d \
