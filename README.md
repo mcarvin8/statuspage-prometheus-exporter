@@ -27,7 +27,7 @@ Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and
 | `statuspage_service_status` | `service_name` | `1` operational, `0` incident/degraded |
 | `statuspage_response_time_seconds` | `service_name` | Summary API request duration |
 | `statuspage_incident_info` | `service_name`, `incident_id`, `incident_name`, `impact`, `shortlink`, `started_at`, `affected_components` | `1` while incident active |
-| `statuspage_maintenance_info` | `service_name`, `maintenance_id`, … | `1` while maintenance active |
+| `statuspage_maintenance_info` | `service_name`, `maintenance_id`, … | `1` while maintenance is active or scheduled |
 | `statuspage_component_status` | `service_name`, `component_name` | `1` operational component, `0` degraded/outage |
 | `statuspage_component_timestamp` | `service_name`, `component_name` | Ms epoch; refreshed each successful poll |
 | `statuspage_probe_check` | `service_name` | `1` if this run used a live response or cache fallback |
