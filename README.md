@@ -18,8 +18,6 @@ A Prometheus exporter that monitors services using Atlassian StatusPage.io statu
   - [Environment Variables](#environment-variables)
 - [Docker Setup](#docker-setup)
   - [Using the Published Docker Image](#using-the-published-docker-image)
-- [Integration with Prometheus](#integration-with-prometheus)
-  - [Prometheus Alerting Rules](#prometheus-alerting-rules)
 - [Monitoring Schedule](#monitoring-schedule)
 - [Container Requirements](#container-requirements)
 
@@ -177,43 +175,6 @@ docker run -d \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
-
-## Integration with Prometheus
-
-Add the exporter to your Prometheus configuration (`prometheus.yml`):
-
-```yaml
-scrape_configs:
-  - job_name: 'statuspage-exporter'
-    scrape_interval: 30s
-    static_configs:
-      - targets: ['statuspage-exporter:9001']
-```
-
-### Prometheus Alerting Rules
-
-The exporter provides metrics that can be used to create Prometheus alerting rules for incidents, service status changes, and component degradation.
-
-An example PrometheusRule manifest is provided in `prometheus/prometheusrule-example.yaml` that demonstrates:
-
-- **Incident Alerts**: Alert when active incidents are detected for specific services
-- **Service Status Alerts**: Alert on service status changes (down, maintenance)
-- **Component Alerts**: Alert when individual components are degraded
-- **Performance Alerts**: Alert on slow API response times
-- **Generic Alerts**: Catch incidents across all monitored services
-
-The example includes:
-- Recording rules to aggregate incident metadata for easier alerting
-- Alert rules with configurable thresholds and durations
-- Template annotations with incident details (ID, name, impact, status page links)
-- Customizable labels for routing to notification channels
-
-To use the example:
-1. Copy `prometheus/prometheusrule-example.yaml` to your Prometheus configuration
-2. Update service names to match your `services.json` configuration
-3. Customize alert thresholds, durations, and notification channels
-4. Adjust metadata (namespace, labels) to match your Prometheus operator setup
-5. Apply the manifest: `kubectl apply -f prometheus/prometheusrule-example.yaml`
 
 ## Monitoring Schedule
 
