@@ -72,7 +72,7 @@ def notify_incident_opened(service_name: str, incident: dict) -> None:
     affected = _format_affected(incident)
     started = incident.get("started_at", "—")
     text = (
-        f"*Incident opened* — *{service_name}*\n"
+        f"🔴 *Incident opened* — *{service_name}*\n"
         f"*{name}*\n"
         f"• Impact: `{impact}`\n"
         f"• ID: `{inc_id}`\n"
@@ -105,7 +105,7 @@ def notify_incident_resolved(service_name: str, incident: dict) -> None:
     inc_id = incident.get("id", "unknown")
     shortlink = incident.get("shortlink", "")
     text = (
-        f"*Incident resolved* — *{service_name}*\n"
+        f"🟢 *Incident resolved* — *{service_name}*\n"
         f"*{name}*\n"
         f"• ID: `{inc_id}`"
     )
