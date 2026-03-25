@@ -506,12 +506,9 @@ def _update_gauges_for_service(item, previous_caches):
             )
         _clear_resolved_incidents(service_name, resolved_ids, cached_by_id)
 
-    # Only announce new incidents on a live API response (not fallback cache)
-    if (
-        has_cache
-        and not from_cache
-        and (current_ids - cached_ids)
-    ):
+    # Announce new incidents on a live API response (not fallback cache).
+    # Missing prior cache is treated as no known incidents so new services still alert.
+    if not from_cache and (current_ids - cached_ids):
         new_ids = current_ids - cached_ids
         for nid in new_ids:
             inc = current_by_id.get(nid)

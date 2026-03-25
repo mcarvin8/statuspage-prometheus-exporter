@@ -2,11 +2,13 @@
 Optional Slack webhook notifications for Statuspage incidents.
 
 When SLACK_WEBHOOK_URL is set, posts to Slack when:
-- A new incident appears (was not in the previous cached check)
+- A new incident appears (was not in the previous on-disk cache snapshot for that service)
 - An incident disappears from the active list (marked resolved on the status page)
 
-Notifications are skipped when there is no prior cache for a service (avoids
-spamming every active incident on first deploy).
+A service with no cache file yet is treated as having no prior incidents, so the
+first successful live check will notify for all active incidents (e.g. new app
+added that already has outages). A cold start with an empty cache can notify for
+every currently active incident across monitored services.
 """
 
 import logging
