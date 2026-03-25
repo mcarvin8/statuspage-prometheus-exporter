@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.0...v2.3.1) (2026-03-25)
+
+
+### Bug Fixes
+
+* add emojis to slack posts ([0f194d8](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/0f194d80249acd5aa6e4600c2b75ad1a3b95dbd0))
+
 ## [2.3.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.2.3...v2.3.0) (2026-03-17)
 
 
