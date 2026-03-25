@@ -12,6 +12,7 @@ Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and
 - [Metrics](#metrics)
 - [Caching](#caching)
 - [Run with Docker](#run-with-docker)
+- [Kubernetes Example](#kubernetes-example)
 
 ## Features
 
@@ -98,3 +99,94 @@ docker run -d \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
+
+## Kubernetes Example
+
+If you run this in Kubernetes, keep two mounts:
+- `/app/statuspage-exporter/cache` on a PVC so incident cache survives pod restarts
+- `/app/statuspage-exporter/services.json` from a ConfigMap (or other config source)
+
+Store `SLACK_WEBHOOK_URL` in a Secret, not inline YAML.
+
+### 1. Deployment (trimmed)
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: statuspage-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: statuspage-exporter
+  template:
+    metadata:
+      labels:
+        app: statuspage-exporter
+    spec:
+      containers:
+        - name: exporter
+          image: mcarvin8/statuspage-prometheus-exporter:latest
+          ports:
+            - containerPort: 9001
+              name: web
+          env:
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: statuspage-exporter-secrets
+                  key: slack_webhook_url
+          volumeMounts:
+            - name: cache
+              mountPath: /app/statuspage-exporter/cache
+            - name: config
+              mountPath: /app/statuspage-exporter/services.json
+              subPath: services.json
+              readOnly: true
+      volumes:
+        - name: cache
+          persistentVolumeClaim:
+            claimName: statuspage-exporter-cache
+        - name: config
+          configMap:
+            name: statuspage-exporter-config
+```
+
+### 2. PersistentVolumeClaim (trimmed)
+
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: statuspage-exporter-cache
+spec:
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 100Mi
+```
+
+### 3. ConfigMap for `services.json` (trimmed)
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: statuspage-exporter-config
+data:
+  services.json: |
+    {
+      "conga": {
+        "url": "https://status.conga.com/api/v2/summary.json",
+        "name": "Conga"
+      },
+      "gong": {
+        "url": "https://status.gong.io/api/v2/summary.json",
+        "name": "Gong"
+      }
+    }
+```
+
+> Tip: keep `CLEAR_CACHE` unset (default) in normal production operation so cache continuity prevents duplicate "incident opened" notifications after redeploys.
