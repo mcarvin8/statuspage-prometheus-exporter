@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.3](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.2...v2.3.3) (2026-03-25)
+
+
+### Bug Fixes
+
+* upgrade base image to Ubuntu 24.04 and change UID ([b6000a3](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/b6000a3461a70f2ae58aa4bdff2c0e3e9a510ec1))
+
 ## [2.3.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.1...v2.3.2) (2026-03-25)
 
 
