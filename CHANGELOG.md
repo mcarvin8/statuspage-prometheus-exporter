@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.2](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.1...v2.3.2) (2026-03-25)
+
+
+### Bug Fixes
+
+* ensure alert fires when new app is added with open incidents ([8887dfc](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/8887dfc4c98ac4d56a2829b7f409d287ce23ec33))
+
 ## [2.3.1](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.0...v2.3.1) (2026-03-25)
 
 
