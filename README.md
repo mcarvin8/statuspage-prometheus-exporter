@@ -39,6 +39,8 @@ The exporter writes the last successful summary per service to disk. **If a requ
 
 Gauges are **updated every check** so series stay “fresh” in Grafana. For **incidents and maintenance**, labels for an existing ID are kept aligned with the cached snapshot so the same time series continues; **new** IDs get labels from the API. Meaningful changes (status, incident/maintenance IDs, component status) trigger cache writes; response time is not cached.
 
+If you run this container on Kubernetes (or any orchestrator that replaces pods/containers), mount `/app/statuspage-exporter/cache` to persistent storage (PVC/PV). Keeping cache files across restarts avoids re-notifying already-known active incidents as newly opened after redeploys.
+
 ## Run with Docker
 
 Use the image from [Docker Hub](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter): add **`services.json`**, mount it, then set **env vars** if you need non-defaults.
