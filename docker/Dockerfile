@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Set working directory
 WORKDIR /app/statuspage-exporter
@@ -24,7 +24,7 @@ ENV PATH="/opt/venv/bin:$PATH" \
     TZ=UTC
 
 # Create non-root user for running the application (numeric UID for Kubernetes runAsNonRoot)
-ARG EXPORTER_UID=1000
+ARG EXPORTER_UID=1001
 RUN useradd --uid ${EXPORTER_UID} --create-home --shell /bin/bash exporter && \
     chown -R exporter:exporter /app/statuspage-exporter /opt/venv
 
