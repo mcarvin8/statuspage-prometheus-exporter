@@ -23,15 +23,27 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest pytest-cov pytest-timeout responses prometheus_client apscheduler requests
+          pip install pytest pytest-cov pytest-timeout responses prometheus_client apscheduler requests genbadge[coverage]
 
       - name: Run unit tests
-        run: pytest tests/unit/ -v --timeout=30 --cov=src --cov-report=term-missing
+        run: pytest tests/unit/ -v --timeout=30 --cov=src --cov-report=term-missing --cov-report=xml:coverage.xml
+
+      - name: Generate coverage badge
+        if: github.event_name == 'push'
+        run: genbadge coverage -i coverage.xml -o badges/coverage.svg
+
+      - name: Commit coverage badge
+        if: github.event_name == 'push'
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add badges/coverage.svg
+          git diff --staged --quiet || git commit -m "chore: update coverage badge [skip ci]"
+          git push
 
   integration-tests:
     name: Integration Tests (Live Services)
     runs-on: ubuntu-latest
-    # Run on push to main only — PRs just run unit tests
     if: github.event_name == 'push'
 
     steps:
@@ -46,7 +58,7 @@ jobs:
       - name: Install dependencies
         run: |
           pip install --upgrade pip
-          pip install pytest pytest-cov pytest-timeout responses prometheus_client apscheduler requests
+          pip install pytest pytest-timeout responses prometheus_client apscheduler requests
 
       - name: Run integration tests
         run: pytest tests/integration/ -v --timeout=30
