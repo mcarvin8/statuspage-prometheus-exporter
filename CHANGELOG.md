@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.5](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.4...v2.3.5) (2026-05-26)
+
+
+### Bug Fixes
+
+* **docker:** add open container labels ([bdb8ddb](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/bdb8ddb55e47d02be247eb44b9aba84c36d07451))
+
 ## [2.3.4](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.3...v2.3.4) (2026-05-26)
 
 
