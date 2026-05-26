@@ -3,6 +3,7 @@
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/mcarvin8/statuspage-prometheus-exporter?sort=date)
 ![Docker Pulls](https://img.shields.io/docker/pulls/mcarvin8/statuspage-prometheus-exporter)
 ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/mcarvin8/statuspage-prometheus-exporter)
+![Coverage](badges/coverage.svg)
 
 Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and components as Prometheus metrics (and optional Slack alerts on incident open/resolve).
 
