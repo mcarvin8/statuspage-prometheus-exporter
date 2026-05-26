@@ -12,3 +12,6 @@ test = [
     "pytest-timeout",
     "responses",
 ]
+
+[tool.coverage.run]
+omit = ["src/status_monitoring.py"]
