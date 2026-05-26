@@ -567,15 +567,6 @@ def check_status_page_service(
             f"Connection failed: {str(e)}",
             str(e),
         )
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Request error for {service_key}: {e}")
-        return _error_response(
-            service_key,
-            "request_error",
-            "Request Error",
-            f"Request failed: {str(e)}",
-            str(e),
-        )
     except json.JSONDecodeError as e:
         logger.error(f"JSON decode error for {service_key}: {e}")
         return _error_response(
@@ -583,6 +574,15 @@ def check_status_page_service(
             "json_error",
             "Parse Error",
             f"Invalid JSON response: {str(e)}",
+            str(e),
+        )
+    except requests.exceptions.RequestException as e:
+        logger.error(f"Request error for {service_key}: {e}")
+        return _error_response(
+            service_key,
+            "request_error",
+            "Request Error",
+            f"Request failed: {str(e)}",
             str(e),
         )
     except Exception as e:
