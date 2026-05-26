@@ -12,6 +12,12 @@ COPY README.md /app/statuspage-exporter/README.md
 COPY LICENSE.md /app/statuspage-exporter/LICENSE.md
 COPY version.txt /app/statuspage-exporter/version.txt
 
+LABEL org.opencontainers.image.title="statuspage-prometheus-exporter" \
+      org.opencontainers.image.description="Prometheus exporter for Atlassian Statuspage monitoring" \
+      org.opencontainers.image.authors="Matt Carvin <matthewjcarvin@gmail.com>" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/mcarvin8/statuspage-prometheus-exporter"
+
 # Install Python and dependencies, create cache directory
 RUN apt-get update && apt-get install -y --no-install-recommends tzdata python3 python3-pip python3-venv && \
     python3 -m venv /opt/venv && \
