@@ -1,0 +1,14 @@
+[project]
+dependencies = [
+    "prometheus_client",
+    "apscheduler",
+    "requests",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=8.0",
+    "pytest-cov",
+    "pytest-timeout",
+    "responses",
+]

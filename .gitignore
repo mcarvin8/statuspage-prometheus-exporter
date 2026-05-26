@@ -22,3 +22,4 @@ pmd-bin-*/*
 # Cache directories for service monitoring
 **/cache/
 *.json.tmp
+.coverage
