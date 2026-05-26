@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.4](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.3...v2.3.4) (2026-05-26)
+
+
+### Bug Fixes
+
+* **service_checker:** catch JSONDecodeError before RequestException ([58dcb22](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/58dcb227b171ff1992560cd9d8cfb876bc891bc3))
+
 ## [2.3.3](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.2...v2.3.3) (2026-03-25)
 
 
