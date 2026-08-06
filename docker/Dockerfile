@@ -1,4 +1,4 @@
-FROM ubuntu:24.04
+FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app/statuspage-exporter
@@ -18,21 +18,19 @@ LABEL org.opencontainers.image.title="statuspage-prometheus-exporter" \
       org.opencontainers.image.licenses="MIT" \
       org.opencontainers.image.source="https://github.com/mcarvin8/statuspage-prometheus-exporter"
 
-# Install Python and dependencies, create cache directory
-RUN apt-get update && apt-get install -y --no-install-recommends tzdata python3 python3-pip python3-venv && \
-    python3 -m venv /opt/venv && \
-    /opt/venv/bin/pip install --no-cache-dir prometheus_client requests apscheduler && \
+# Install dependencies and timezone data, create cache directory
+RUN apt-get update && apt-get install -y --no-install-recommends tzdata && \
     rm -rf /var/lib/apt/lists/* && \
+    pip install --no-cache-dir prometheus_client requests apscheduler && \
     mkdir -p /app/statuspage-exporter/cache
 
-# Set the environment variables to use the venv and default timezone
-ENV PATH="/opt/venv/bin:$PATH" \
-    TZ=UTC
+# Set the default timezone
+ENV TZ=UTC
 
 # Create non-root user for running the application (numeric UID for Kubernetes runAsNonRoot)
 ARG EXPORTER_UID=1001
 RUN useradd --uid ${EXPORTER_UID} --create-home --shell /bin/bash exporter && \
-    chown -R exporter:exporter /app/statuspage-exporter /opt/venv
+    chown -R exporter:exporter /app/statuspage-exporter
 
 # Use numeric UID so Kubernetes can verify non-root when runAsNonRoot is set
 USER ${EXPORTER_UID}

@@ -1,0 +1,74 @@
+name: Docker Image Test
+
+on:
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "docker/**"
+      - "src/**"
+      - ".github/workflows/docker-image-test.yml"
+
+jobs:
+  build-and-test:
+    name: Build & Run Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile
+          tags: statuspage-exporter:test
+          load: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Run container with real-world services.json
+        run: |
+          docker run -d \
+            --name statuspage-exporter \
+            -p 9001:9001 \
+            -e CHECK_INTERVAL_MINUTES=60 \
+            -v "${{ github.workspace }}/src/services.json:/app/statuspage-exporter/services.json:ro" \
+            statuspage-exporter:test
+
+      - name: Wait for metrics endpoint
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:9001/metrics -o /tmp/metrics.txt; then
+              echo "Metrics endpoint is up after ${i}s"
+              break
+            fi
+            if [ "$i" -eq 30 ]; then
+              echo "Metrics endpoint did not come up in time"
+              docker logs statuspage-exporter
+              exit 1
+            fi
+            sleep 1
+          done
+
+      - name: Verify metrics contain real service data
+        run: |
+          echo "--- metrics sample ---"
+          grep 'statuspage_service_status' /tmp/metrics.txt || true
+
+          # Confirm the exporter actually loaded and checked services from services.json
+          # (checks a couple of the real-world entries defined in src/services.json)
+          grep -q 'statuspage_service_status{service_name="Conga"}' /tmp/metrics.txt
+          grep -q 'statuspage_service_status{service_name="DocuSign"}' /tmp/metrics.txt
+          grep -q 'statuspage_probe_check{service_name="Conga"}' /tmp/metrics.txt
+
+      - name: Check container is healthy and logs are clean
+        run: |
+          docker logs statuspage-exporter
+          docker logs statuspage-exporter 2>&1 | grep -qi 'Traceback' && exit 1 || true
+
+      - name: Stop and remove container
+        if: always()
+        run: docker rm -f statuspage-exporter || true
