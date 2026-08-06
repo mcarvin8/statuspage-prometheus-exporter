@@ -43,10 +43,6 @@
     "url": "https://status.6sense.com/api/v2/summary.json",
     "name": "6sense"
   },
-  "fivetran": {
-    "url": "https://status.fivetran.com/api/v2/summary.json",
-    "name": "Fivetran"
-  },
   "boomi": {
     "url": "https://status.boomi.com/api/v2/summary.json",
     "name": "Boomi"
