@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.4.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.5...v2.4.0) (2026-08-06)
+
+
+### Features
+
+* **docker:** slim base image + PR image build/run test ([#31](https://github.com/mcarvin8/statuspage-prometheus-exporter/issues/31)) ([75bba0c](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/75bba0cdf1f62040fa6aba37842b5f1ddeff6449))
+
 ## [2.3.5](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.4...v2.3.5) (2026-05-26)
 
 
