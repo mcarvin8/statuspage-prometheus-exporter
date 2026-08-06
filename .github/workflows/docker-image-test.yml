@@ -34,7 +34,7 @@ jobs:
           docker run -d \
             --name statuspage-exporter \
             -p 9001:9001 \
-            -e CHECK_INTERVAL_MINUTES=60 \
+            -e CHECK_INTERVAL_MINUTES=30 \
             -v "${{ github.workspace }}/src/services.json:/app/statuspage-exporter/services.json:ro" \
             statuspage-exporter:test
 
