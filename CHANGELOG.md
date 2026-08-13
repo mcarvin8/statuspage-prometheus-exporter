@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.5.0...v2.6.0) (2026-08-13)
+
+
+### Features
+
+* add rolling-window uptime/SLA percentage gauge ([#37](https://github.com/mcarvin8/statuspage-prometheus-exporter/issues/37)) ([52aac9a](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/52aac9a05b6675f353780e6e279df9f4fe0a0b7e))
+
 ## [2.5.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.4.0...v2.5.0) (2026-08-13)
 
 
