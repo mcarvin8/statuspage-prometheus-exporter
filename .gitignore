@@ -28,3 +28,6 @@ pmd-bin-*/*
 dist/
 build/
 *.egg-info/
+
+# Metrics folder for run once ops
+metrics/
