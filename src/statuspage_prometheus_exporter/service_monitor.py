@@ -127,9 +127,11 @@ from .gauges import (
     statuspage_component_timestamp,
     statuspage_probe_check,
     statuspage_application_timestamp,
+    statuspage_uptime_percentage,
 )
 from .cache_manager import load_service_response
 from .slack_notify import notify_incident_opened, notify_incident_resolved
+from .uptime_tracker import append_status_sample, compute_uptime_percentages
 
 logger = logging.getLogger(__name__)
 
@@ -295,12 +297,14 @@ def _clear_gauges(is_initial_run):
         statuspage_component_timestamp.clear()
         statuspage_probe_check.clear()
         statuspage_application_timestamp.clear()
+        statuspage_uptime_percentage.clear()
     else:
         logger.debug("Clearing existing gauge labels before updating with new data...")
         statuspage_response_time_gauge.clear()
         statuspage_component_timestamp.clear()
         statuspage_probe_check.clear()
         statuspage_application_timestamp.clear()
+        statuspage_uptime_percentage.clear()
 
 
 def _update_probe_and_response_time(service_name, result, from_cache):
@@ -318,6 +322,16 @@ def _update_status_and_app_timestamp(service_name, status_value, current_timesta
     statuspage_application_timestamp.labels(service_name=service_name).set(
         current_timestamp_ms
     )
+
+
+def _update_uptime_gauges(service_name, service_key, status_value):
+    """Record this run's status sample and refresh the rolling-window uptime gauges."""
+    append_status_sample(service_key, status_value)
+    for window, percentage in compute_uptime_percentages(service_key).items():
+        if percentage is not None:
+            statuspage_uptime_percentage.labels(
+                service_name=service_name, window=window
+            ).set(percentage)
 
 
 def _clear_resolved_incidents(service_name, resolved_ids, cached_by_id):
@@ -487,6 +501,7 @@ def _update_gauges_for_service(item, previous_caches):
     has_cache = cached_data is not None
 
     _update_status_and_app_timestamp(service_name, status_value, current_timestamp_ms)
+    _update_uptime_gauges(service_name, service_key, status_value)
 
     incident_metadata = result.get("incident_metadata", [])
     cached_incidents = (cached_data or {}).get("incident_metadata", [])

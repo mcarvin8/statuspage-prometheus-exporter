@@ -54,6 +54,7 @@ from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from .service_monitor import monitor_services
 from .cache_manager import clear_cache
+from .uptime_tracker import clear_uptime_history
 
 # Configure logging based on DEBUG environment variable
 debug_enabled = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
@@ -100,6 +101,7 @@ def _clear_cache_if_requested():
             "CLEAR_CACHE environment variable is set - clearing all cache files..."
         )
         clear_cache()
+        clear_uptime_history()
     else:
         logger.debug("CLEAR_CACHE not set - preserving existing cache files")
 
