@@ -24,3 +24,25 @@ def first_service(services):
         if not k.startswith("_")
     )
     return key, config
+
+
+@pytest.fixture(autouse=True)
+def _isolate_uptime_history(tmp_path, monkeypatch):
+    """
+    Uptime history I/O (uptime_tracker.py) isn't mocked out by the per-test
+    gauge/cache patches most service_monitor tests already use, so without
+    this it would write real *_uptime.jsonl files into the repo's cache/
+    directory on every test run. Redirect it to a throwaway tmp_path instead.
+    Tests that want to control this directory themselves (e.g. test_uptime_tracker.py)
+    can still patch these same targets locally - the more specific patch wins.
+    """
+    cache_dir = tmp_path / "cache"
+    cache_dir.mkdir(parents=True, exist_ok=True)
+    monkeypatch.setattr(
+        "statuspage_prometheus_exporter.uptime_tracker.get_cache_directory",
+        lambda: cache_dir,
+    )
+    monkeypatch.setattr(
+        "statuspage_prometheus_exporter.uptime_tracker.ensure_cache_directory",
+        lambda: cache_dir,
+    )

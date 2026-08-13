@@ -40,6 +40,10 @@ Metrics:
         Labels: service_name
         Values: Unix timestamp in milliseconds
 
+    - statuspage_uptime_percentage: Rolling-window uptime percentage, from local history
+        Labels: service_name, window (24h, 7d, 30d)
+        Values: 0-100; not set for a window with no recorded samples yet
+
 The metrics are designed for use in Grafana dashboards with:
     - Status indicator panels
     - Alert rules for service degradation/outages
@@ -121,4 +125,11 @@ statuspage_application_timestamp = Gauge(
     "statuspage_application_timestamp",
     "Timestamp of last update of overall application status in Unix epoch milliseconds",
     ["service_name"],
+)
+
+# Rolling-window uptime percentage gauge, computed from local history (see uptime_tracker.py)
+statuspage_uptime_percentage = Gauge(
+    "statuspage_uptime_percentage",
+    "Percentage of monitoring runs with operational status over the given rolling window",
+    ["service_name", "window"],
 )

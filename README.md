@@ -39,6 +39,7 @@ Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and
 | `statuspage_component_timestamp` | `service_name`, `component_name` | Ms epoch; refreshed each successful poll |
 | `statuspage_probe_check` | `service_name` | `1` if this run used a live response or cache fallback |
 | `statuspage_application_timestamp` | `service_name` | Ms epoch; refreshed each successful poll |
+| `statuspage_uptime_percentage` | `service_name`, `window` (`24h`, `7d`, `30d`) | % of monitoring runs with operational status over the rolling window; unset until a service has at least one recorded sample in that window |
 
 ## Caching
 
@@ -47,6 +48,12 @@ The exporter writes the last successful summary per service to disk. **If a requ
 Gauges are **updated every check** so series stay “fresh” in Grafana. For **incidents and maintenance**, labels for an existing ID are kept aligned with the cached snapshot so the same time series continues; **new** IDs get labels from the API. Meaningful changes (status, incident/maintenance IDs, component status) trigger cache writes; response time is not cached.
 
 If you run this container on Kubernetes (or any orchestrator that replaces pods/containers), mount `/app/statuspage-exporter/cache` to persistent storage (PVC/PV). Keeping cache files across restarts avoids re-notifying already-known active incidents as newly opened after redeploys.
+
+### Uptime history
+
+Each monitoring run also appends one sample (`cache/{service_key}_uptime.jsonl`) recording whether that run's status was operational, alongside the response-snapshot cache described above. `statuspage_uptime_percentage` is computed from this history on every run for three rolling windows (`24h`, `7d`, `30d`) — a window stays unset in Prometheus until at least one sample falls inside it. History older than 30 days is trimmed automatically, so file size stays bounded.
+
+This history lives in the same `cache` directory, so it's covered by the same persistent-volume guidance above: without it mounted, uptime percentages reset to "no data" on every pod/container restart instead of accumulating over time. `CLEAR_CACHE=true` wipes uptime history along with the response-snapshot cache.
 
 ## Run with Docker
 
