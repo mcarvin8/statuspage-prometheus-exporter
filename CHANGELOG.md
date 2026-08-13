@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.5.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.4.0...v2.5.0) (2026-08-13)
+
+
+### Features
+
+* add one-time run mode for Cron-based scheduling ([#33](https://github.com/mcarvin8/statuspage-prometheus-exporter/issues/33)) ([4d7fd04](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/4d7fd04b0ab040fa5d3965d21cf73a321151fd84))
+* publish package to PyPI in addition to Docker Hub ([#35](https://github.com/mcarvin8/statuspage-prometheus-exporter/issues/35)) ([8003111](https://github.com/mcarvin8/statuspage-prometheus-exporter/commit/8003111a9f388208f60a15c04ca1402eecfa462c))
+
 ## [2.4.0](https://github.com/mcarvin8/statuspage-prometheus-exporter/compare/v2.3.5...v2.4.0) (2026-08-06)
 
 
