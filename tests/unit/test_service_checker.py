@@ -4,7 +4,6 @@ from unittest.mock import patch, MagicMock
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 # Minimal valid StatusPage.io response
 OPERATIONAL_PAYLOAD = {
@@ -44,13 +43,13 @@ def no_cache(tmp_path, monkeypatch):
     """Redirect cache to a temp directory so unit tests are isolated."""
     monkeypatch.setenv("SERVICES_JSON_PATH", 
         str(Path(__file__).parent.parent.parent / "src" / "services.json"))
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path):
         yield
 
 
 @rsps_lib.activate
 def test_operational_response_returns_status_1():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json",
                  json=OPERATIONAL_PAYLOAD, status=200)
     result = check_status_page_service(
@@ -64,7 +63,7 @@ def test_operational_response_returns_status_1():
 
 @rsps_lib.activate
 def test_active_incident_returns_status_0():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json",
                  json=INCIDENT_PAYLOAD, status=200)
     result = check_status_page_service(
@@ -79,7 +78,7 @@ def test_active_incident_returns_status_0():
 @rsps_lib.activate
 def test_resolved_incident_excluded():
     """resolved_at set → incident should be filtered out."""
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     payload = dict(INCIDENT_PAYLOAD)
     payload["incidents"] = [
         {**INCIDENT_PAYLOAD["incidents"][0], "resolved_at": "2025-05-01T13:00:00Z"}
@@ -94,7 +93,7 @@ def test_resolved_incident_excluded():
 
 @rsps_lib.activate
 def test_non_operational_component_without_incident_sets_minor():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     payload = {
         **OPERATIONAL_PAYLOAD,
         "components": [
@@ -113,7 +112,7 @@ def test_non_operational_component_without_incident_sets_minor():
 
 @rsps_lib.activate
 def test_http_404_returns_none_status():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json", status=404)
     result = check_status_page_service(
         "example", {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"}
@@ -126,7 +125,7 @@ def test_http_404_returns_none_status():
 @rsps_lib.activate
 def test_network_timeout_returns_none_status():
     from requests.exceptions import ConnectTimeout  # remove "import responses" line
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json",
                  body=ConnectTimeout())
     result = check_status_page_service(
@@ -137,7 +136,7 @@ def test_network_timeout_returns_none_status():
 
 @rsps_lib.activate
 def test_http_401_returns_auth_error():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json", status=401)
     result = check_status_page_service(
         "example", {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"}
@@ -147,7 +146,7 @@ def test_http_401_returns_auth_error():
 
 @rsps_lib.activate
 def test_http_500_returns_5xx_error():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     # Add enough responses to exhaust the 3 retries
     for _ in range(4):
         rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json", status=500)
@@ -163,11 +162,11 @@ def test_http_500_returns_5xx_error():
 def test_invalid_json_returns_parse_error():
     import requests
     from unittest.mock import patch
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json",
                  body=b"not json at all", status=200)
     # Use a plain session so the bad body reaches response.json()
-    with patch("service_checker.create_retry_session", return_value=requests.Session()):
+    with patch("statuspage_prometheus_exporter.service_checker.create_retry_session", return_value=requests.Session()):
         result = check_status_page_service(
             "example", {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"}
         )
@@ -177,7 +176,7 @@ def test_invalid_json_returns_parse_error():
 @rsps_lib.activate
 def test_connection_error_returns_none_status():
     from requests.exceptions import ConnectionError
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     rsps_lib.add(rsps_lib.GET, "https://status.example.com/api/v2/summary.json",
                  body=ConnectionError("refused"))
     result = check_status_page_service(
@@ -188,7 +187,7 @@ def test_connection_error_returns_none_status():
 
 @rsps_lib.activate
 def test_maintenance_metadata_populated():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
     payload = {
         **OPERATIONAL_PAYLOAD,
         "scheduled_maintenances": [

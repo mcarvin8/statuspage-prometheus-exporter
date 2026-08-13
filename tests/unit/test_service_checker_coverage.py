@@ -21,7 +21,6 @@ from unittest.mock import patch, MagicMock
 import pytest
 import responses as rsps_lib
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 OPERATIONAL_PAYLOAD = {
@@ -34,13 +33,13 @@ OPERATIONAL_PAYLOAD = {
 
 @pytest.fixture(autouse=True)
 def no_cache(tmp_path):
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path):
         yield
 
 
 # ── lines 85-92: _error_response returns all expected keys ───────────────────
 def test_error_response_has_all_keys():
-    from service_checker import _error_response
+    from statuspage_prometheus_exporter.service_checker import _error_response
 
     result = _error_response("svc", "timeout", "Timeout", "details", "err msg")
     assert result["status"] is None
@@ -53,7 +52,7 @@ def test_error_response_has_all_keys():
 
 # ── line 172: duplicate incident is skipped ──────────────────────────────────
 def test_duplicate_incident_deduped():
-    from service_checker import _build_incident_metadata_and_severity
+    from statuspage_prometheus_exporter.service_checker import _build_incident_metadata_and_severity
 
     dup_incident = {
         "id": "inc1",
@@ -74,7 +73,7 @@ def test_duplicate_incident_deduped():
 
 # ── line 227: completed maintenance is excluded ──────────────────────────────
 def test_completed_maintenance_excluded():
-    from service_checker import _get_active_maintenances
+    from statuspage_prometheus_exporter.service_checker import _get_active_maintenances
 
     data = {
         "scheduled_maintenances": [
@@ -90,7 +89,7 @@ def test_completed_maintenance_excluded():
 
 # ── lines 241-244: system metadata incident is skipped ───────────────────────
 def test_system_metadata_incident_skipped():
-    from service_checker import _build_incident_metadata_and_severity
+    from statuspage_prometheus_exporter.service_checker import _build_incident_metadata_and_severity
 
     system_inc = {
         "id": "sys1",
@@ -113,7 +112,7 @@ def test_system_metadata_incident_skipped():
 
 # ── lines 248, 274: shortlink fallback built from base_url ───────────────────
 def test_shortlink_fallback_from_base_url():
-    from service_checker import _build_incident_metadata_and_severity
+    from statuspage_prometheus_exporter.service_checker import _build_incident_metadata_and_severity
 
     inc_no_shortlink = {
         "id": "inc99",
@@ -136,7 +135,7 @@ def test_shortlink_fallback_from_base_url():
 
 # ── line 297: incident with no affected components ───────────────────────────
 def test_incident_no_affected_components_in_description():
-    from service_checker import _build_incident_metadata_and_severity
+    from statuspage_prometheus_exporter.service_checker import _build_incident_metadata_and_severity
 
     inc = {
         "id": "inc100",
@@ -158,7 +157,7 @@ def test_incident_no_affected_components_in_description():
 
 # ── lines 323-368: _build_maintenance_metadata full path ─────────────────────
 def test_build_maintenance_metadata_full():
-    from service_checker import _build_maintenance_metadata
+    from statuspage_prometheus_exporter.service_checker import _build_maintenance_metadata
 
     maintenances = [
         {
@@ -199,7 +198,7 @@ def test_build_maintenance_metadata_full():
 
 # ── lines 379-403: _preserve_labels_from_cache ───────────────────────────────
 def test_preserve_labels_from_cache_overwrites_labels():
-    from service_checker import _preserve_labels_from_cache
+    from statuspage_prometheus_exporter.service_checker import _preserve_labels_from_cache
 
     result = {
         "incident_metadata": [
@@ -259,7 +258,7 @@ def test_preserve_labels_from_cache_overwrites_labels():
 @rsps_lib.activate
 def test_cache_not_updated_when_unchanged(tmp_path):
     """When response matches cache, the 'preserving existing cache' branch is hit."""
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     rsps_lib.add(
         rsps_lib.GET,
@@ -276,8 +275,8 @@ def test_cache_not_updated_when_unchanged(tmp_path):
         "component_metadata": [{"name": "API", "status": "operational", "status_value": 1}],
     }
 
-    with patch("service_checker.load_service_response", return_value=existing_cache), \
-         patch("service_checker.save_service_response") as mock_save:
+    with patch("statuspage_prometheus_exporter.service_checker.load_service_response", return_value=existing_cache), \
+         patch("statuspage_prometheus_exporter.service_checker.save_service_response") as mock_save:
         result = check_status_page_service(
             "example",
             {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"},
@@ -291,7 +290,7 @@ def test_cache_not_updated_when_unchanged(tmp_path):
 # ── lines 538-548: HTTP 4xx generic branch (e.g. 429) ────────────────────────
 @rsps_lib.activate
 def test_http_429_returns_4xx_error():
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     rsps_lib.add(
         rsps_lib.GET,
@@ -310,7 +309,7 @@ def test_http_429_returns_4xx_error():
 @rsps_lib.activate
 def test_check_service_status_dispatches_correctly():
     """check_service_status routes to check_status_page_service and returns valid result."""
-    from service_checker import check_service_status
+    from statuspage_prometheus_exporter.service_checker import check_service_status
 
     rsps_lib.add(
         rsps_lib.GET,

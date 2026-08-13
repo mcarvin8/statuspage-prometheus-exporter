@@ -117,8 +117,8 @@ import logging
 import re
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from service_checker import SERVICES, check_service_status
-from gauges import (
+from .service_checker import SERVICES, check_service_status
+from .gauges import (
     statuspage_status_gauge,
     statuspage_response_time_gauge,
     statuspage_incident_info,
@@ -128,8 +128,8 @@ from gauges import (
     statuspage_probe_check,
     statuspage_application_timestamp,
 )
-from cache_manager import load_service_response
-from slack_notify import notify_incident_opened, notify_incident_resolved
+from .cache_manager import load_service_response
+from .slack_notify import notify_incident_opened, notify_incident_resolved
 
 logger = logging.getLogger(__name__)
 

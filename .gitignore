@@ -23,3 +23,8 @@ pmd-bin-*/*
 **/cache/
 *.json.tmp
 .coverage
+
+# Python packaging build artifacts
+dist/
+build/
+*.egg-info/

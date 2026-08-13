@@ -9,7 +9,6 @@ import pytest
 import sys
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 
 def pytest_generate_tests(metafunc):
@@ -29,14 +28,14 @@ def pytest_generate_tests(metafunc):
 @pytest.fixture(autouse=True)
 def isolated_cache(tmp_path):
     from unittest.mock import patch
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path):
         yield
 
 
 def test_live_service_returns_valid_schema(service_item):
     """Every live service must return a parseable response with the expected keys."""
     service_key, service_config = service_item
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     result = check_status_page_service(service_key, service_config)
 
@@ -54,7 +53,7 @@ def test_live_service_returns_valid_schema(service_item):
 def test_live_service_successful_response(service_item):
     """Live services should actually respond (not be timing out or 404ing)."""
     service_key, service_config = service_item
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     result = check_status_page_service(service_key, service_config)
 
@@ -70,7 +69,7 @@ def test_live_service_successful_response(service_item):
 def test_live_service_incident_metadata_shape(service_item):
     """If incidents are present, each must have required fields."""
     service_key, service_config = service_item
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     result = check_status_page_service(service_key, service_config)
     if not result["success"]:
@@ -87,7 +86,7 @@ def test_live_service_incident_metadata_shape(service_item):
 def test_live_service_component_metadata_shape(service_item):
     """Every component must have name, status, and a binary status_value."""
     service_key, service_config = service_item
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     result = check_status_page_service(service_key, service_config)
     if not result["success"]:

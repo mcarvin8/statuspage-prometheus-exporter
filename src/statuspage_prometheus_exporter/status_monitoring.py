@@ -52,8 +52,8 @@ import logging
 from prometheus_client import start_http_server, write_to_textfile, REGISTRY
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
-from service_monitor import monitor_services
-from cache_manager import clear_cache
+from .service_monitor import monitor_services
+from .cache_manager import clear_cache
 
 # Configure logging based on DEBUG environment variable
 debug_enabled = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")

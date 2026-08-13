@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 INCIDENT = {
     "id": "inc1",
@@ -17,16 +16,16 @@ INCIDENT = {
 
 def test_notify_skipped_when_no_webhook(monkeypatch):
     monkeypatch.delenv("SLACK_WEBHOOK_URL", raising=False)
-    from slack_notify import notify_incident_opened
+    from statuspage_prometheus_exporter.slack_notify import notify_incident_opened
     # should not raise
     notify_incident_opened("Service A", INCIDENT)
 
 
-@patch("slack_notify.requests.post")
+@patch("statuspage_prometheus_exporter.slack_notify.requests.post")
 def test_notify_incident_opened_posts_webhook(mock_post, monkeypatch):
     monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/test")
     mock_post.return_value.status_code = 200
-    from slack_notify import notify_incident_opened
+    from statuspage_prometheus_exporter.slack_notify import notify_incident_opened
     import time
     notify_incident_opened("Service A", INCIDENT)
     time.sleep(0.1)  # let the daemon thread fire
@@ -35,11 +34,11 @@ def test_notify_incident_opened_posts_webhook(mock_post, monkeypatch):
     assert "API Down" in payload["blocks"][0]["text"]["text"]
 
 
-@patch("slack_notify.requests.post")
+@patch("statuspage_prometheus_exporter.slack_notify.requests.post")
 def test_notify_incident_resolved_posts_webhook(mock_post, monkeypatch):
     monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/test")
     mock_post.return_value.status_code = 200
-    from slack_notify import notify_incident_resolved
+    from statuspage_prometheus_exporter.slack_notify import notify_incident_resolved
     import time
     notify_incident_resolved("Service A", INCIDENT)
     time.sleep(0.1)
@@ -48,12 +47,12 @@ def test_notify_incident_resolved_posts_webhook(mock_post, monkeypatch):
     assert "resolved" in payload["blocks"][0]["text"]["text"].lower()
 
 
-@patch("slack_notify.requests.post")
+@patch("statuspage_prometheus_exporter.slack_notify.requests.post")
 def test_notify_logs_warning_on_non_200(mock_post, monkeypatch):
     monkeypatch.setenv("SLACK_WEBHOOK_URL", "https://hooks.slack.com/test")
     mock_post.return_value.status_code = 500
     mock_post.return_value.text = "Internal Server Error"
-    from slack_notify import notify_incident_opened
+    from statuspage_prometheus_exporter.slack_notify import notify_incident_opened
     import time
     notify_incident_opened("Service A", INCIDENT)
     time.sleep(0.1)

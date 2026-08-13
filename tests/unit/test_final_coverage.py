@@ -24,7 +24,6 @@ import pytest
 import responses as rsps_lib
 import requests
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 # ---------------------------------------------------------------------------
 # Shared helpers
@@ -33,14 +32,14 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 SERVICES_ONE = {"svc_a": {"name": "Service A", "url": "https://example.com"}}
 
 _GAUGE_PATCHES = [
-    "service_monitor.statuspage_status_gauge",
-    "service_monitor.statuspage_response_time_gauge",
-    "service_monitor.statuspage_incident_info",
-    "service_monitor.statuspage_maintenance_info",
-    "service_monitor.statuspage_component_status",
-    "service_monitor.statuspage_component_timestamp",
-    "service_monitor.statuspage_probe_check",
-    "service_monitor.statuspage_application_timestamp",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_status_gauge",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_response_time_gauge",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_incident_info",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_maintenance_info",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_component_status",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_component_timestamp",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_probe_check",
+    "statuspage_prometheus_exporter.service_monitor.statuspage_application_timestamp",
 ]
 
 
@@ -93,13 +92,13 @@ def _fail_result():
 def test_ensure_cache_directory_debug_log(tmp_path, caplog):
     """Calling ensure_cache_directory on a new path hits the mkdir + logger.debug lines."""
     import logging
-    from cache_manager import ensure_cache_directory
+    from statuspage_prometheus_exporter.cache_manager import ensure_cache_directory
 
     new_dir = tmp_path / "fresh_cache_dir"
     assert not new_dir.exists()
 
-    with patch("cache_manager.get_cache_directory", return_value=new_dir), \
-         caplog.at_level(logging.DEBUG, logger="cache_manager"):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=new_dir), \
+         caplog.at_level(logging.DEBUG, logger="statuspage_prometheus_exporter.cache_manager"):
         result = ensure_cache_directory()
 
     assert result == new_dir
@@ -113,7 +112,7 @@ def test_ensure_cache_directory_debug_log(tmp_path, caplog):
 # Import at module level to avoid coverage-miss due to lazy import
 # ---------------------------------------------------------------------------
 
-from service_checker import (  # noqa: E402  (after sys.path insert)
+from statuspage_prometheus_exporter.service_checker import (  # noqa: E402  (after sys.path insert)
     _error_response,
     _build_incident_metadata_and_severity,
     check_service_status,
@@ -152,8 +151,8 @@ def test_duplicate_incident_debug_log(caplog, tmp_path):
         "started_at": "2025-05-01T12:00:00Z",
         "components": [],
     }
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path), \
-         caplog.at_level(logging.DEBUG, logger="service_checker"):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path), \
+         caplog.at_level(logging.DEBUG, logger="statuspage_prometheus_exporter.service_checker"):
         meta, desc, sev = _build_incident_metadata_and_severity(
             [inc, inc],  # duplicate triggers the else branch at line 172
             {"url": "https://status.example.com/api/v2/summary.json"},
@@ -173,7 +172,7 @@ def test_duplicate_incident_debug_log(caplog, tmp_path):
 
 def test_http_403_returns_auth_error(tmp_path):
     """403 hits the 401/403 auth-error branch inside the HTTPError handler."""
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     mock_response = MagicMock()
     mock_response.status_code = 403
@@ -183,8 +182,8 @@ def test_http_403_returns_auth_error(tmp_path):
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path), \
-         patch("service_checker.create_retry_session", return_value=mock_session):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path), \
+         patch("statuspage_prometheus_exporter.service_checker.create_retry_session", return_value=mock_session):
         result = check_status_page_service(
             "example",
             {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"},
@@ -196,7 +195,7 @@ def test_http_403_returns_auth_error(tmp_path):
 
 def test_http_422_returns_4xx_error(tmp_path):
     """422 hits the generic 400-499 branch (lines 541-548)."""
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     mock_response = MagicMock()
     mock_response.status_code = 422
@@ -206,8 +205,8 @@ def test_http_422_returns_4xx_error(tmp_path):
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path), \
-         patch("service_checker.create_retry_session", return_value=mock_session):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path), \
+         patch("statuspage_prometheus_exporter.service_checker.create_retry_session", return_value=mock_session):
         result = check_status_page_service(
             "example",
             {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"},
@@ -219,7 +218,7 @@ def test_http_422_returns_4xx_error(tmp_path):
 
 def test_http_503_returns_5xx_error(tmp_path):
     """503 hits the 500-599 server-error branch."""
-    from service_checker import check_status_page_service
+    from statuspage_prometheus_exporter.service_checker import check_status_page_service
 
     mock_response = MagicMock()
     mock_response.status_code = 503
@@ -229,8 +228,8 @@ def test_http_503_returns_5xx_error(tmp_path):
     mock_session = MagicMock()
     mock_session.get.return_value = mock_response
 
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path), \
-         patch("service_checker.create_retry_session", return_value=mock_session):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path), \
+         patch("statuspage_prometheus_exporter.service_checker.create_retry_session", return_value=mock_session):
         result = check_status_page_service(
             "example",
             {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"},
@@ -259,7 +258,7 @@ def test_check_service_status_top_level_import(tmp_path):
         },
         status=200,
     )
-    with patch("cache_manager.get_cache_directory", return_value=tmp_path):
+    with patch("statuspage_prometheus_exporter.cache_manager.get_cache_directory", return_value=tmp_path):
         result = check_service_status(
             "example",
             {"url": "https://status.example.com/api/v2/summary.json", "name": "Example"},
@@ -273,7 +272,7 @@ def test_check_service_status_top_level_import(tmp_path):
 # Import at top level
 # ---------------------------------------------------------------------------
 
-from slack_notify import _get_webhook_url, _format_affected  # noqa: E402
+from statuspage_prometheus_exporter.slack_notify import _get_webhook_url, _format_affected  # noqa: E402
 
 
 def test_get_webhook_url_top_level(monkeypatch):
@@ -301,11 +300,11 @@ def test_format_affected_empty_string():
 def test_check_service_with_fallback_logs_no_cache(caplog, tmp_path):
     """After a failure with no cache, the 'no cached data' warning is logged (line 178)."""
     import logging
-    from service_monitor import check_service_with_fallback
+    from statuspage_prometheus_exporter.service_monitor import check_service_with_fallback
 
-    with patch("service_monitor.check_service_status", return_value=_fail_result()), \
-         patch("service_monitor.load_service_response", return_value=None), \
-         caplog.at_level(logging.WARNING, logger="service_monitor"):
+    with patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value=_fail_result()), \
+         patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value=None), \
+         caplog.at_level(logging.WARNING, logger="statuspage_prometheus_exporter.service_monitor"):
         item = check_service_with_fallback(
             "svc_a", {"name": "Service A", "url": "https://example.com"}
         )
@@ -319,7 +318,7 @@ def test_check_service_with_fallback_logs_no_cache(caplog, tmp_path):
 # Import at top level
 # ---------------------------------------------------------------------------
 
-from service_monitor import normalize_timestamp  # noqa: E402
+from statuspage_prometheus_exporter.service_monitor import normalize_timestamp  # noqa: E402
 
 
 def test_normalize_timestamp_with_millis():
@@ -343,7 +342,7 @@ def test_normalize_timestamp_none_and_sentinels():
 # Import at top level
 # ---------------------------------------------------------------------------
 
-from service_monitor import (  # noqa: E402
+from statuspage_prometheus_exporter.service_monitor import (  # noqa: E402
     _update_status_and_app_timestamp,
     _update_active_incidents,
 )
@@ -382,24 +381,24 @@ def test_update_active_incidents_empty_top_level(
 # These need monitor_services called with the right state
 # ---------------------------------------------------------------------------
 
-@patch("service_monitor.SERVICES", SERVICES_ONE)
-@patch("service_monitor.check_service_status", return_value={**_ok_result(), "from_cache": True})
-@patch("service_monitor.load_service_response", return_value=None)
+@patch("statuspage_prometheus_exporter.service_monitor.SERVICES", SERVICES_ONE)
+@patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value={**_ok_result(), "from_cache": True})
+@patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value=None)
 @_apply_gauge_patches
 def test_from_cache_true_sets_probe_to_one(
     mock_app_ts, mock_probe, mock_comp_ts, mock_comp,
     mock_maint, mock_inc, mock_rt, mock_status,
     mock_load, mock_check,
 ):
-    from service_monitor import monitor_services
+    from statuspage_prometheus_exporter.service_monitor import monitor_services
     monitor_services(is_initial_run=False)
     # success=True and from_cache=True → probe_success = 1
     mock_probe.labels.return_value.set.assert_called_with(1)
 
 
-@patch("service_monitor.SERVICES", SERVICES_ONE)
-@patch("service_monitor.check_service_status", return_value=_ok_result(incident_metadata=[]))
-@patch("service_monitor.load_service_response", return_value={
+@patch("statuspage_prometheus_exporter.service_monitor.SERVICES", SERVICES_ONE)
+@patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value=_ok_result(incident_metadata=[]))
+@patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value={
     "status": 0,
     "incident_metadata": [
         {
@@ -414,15 +413,15 @@ def test_from_cache_true_sets_probe_to_one(
     "maintenance_metadata": [],
     "component_metadata": [],
 })
-@patch("service_monitor.notify_incident_resolved")
-@patch("service_monitor.notify_incident_opened")
+@patch("statuspage_prometheus_exporter.service_monitor.notify_incident_resolved")
+@patch("statuspage_prometheus_exporter.service_monitor.notify_incident_opened")
 @_apply_gauge_patches
 def test_resolved_incident_notify_called(
     mock_app_ts, mock_probe, mock_comp_ts, mock_comp,
     mock_maint, mock_inc, mock_rt, mock_status,
     mock_opened, mock_resolved, mock_load, mock_check,
 ):
-    from service_monitor import monitor_services
+    from statuspage_prometheus_exporter.service_monitor import monitor_services
     monitor_services(is_initial_run=False)
     mock_resolved.assert_called_once()
     assert mock_resolved.call_args[0][0] == "Service A"

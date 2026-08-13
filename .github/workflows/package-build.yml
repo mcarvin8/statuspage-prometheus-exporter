@@ -1,0 +1,62 @@
+name: Package Build
+
+# Builds the statuspage-prometheus-exporter sdist/wheel and smoke-tests it the
+# same way docker-image-test.yml smoke-tests the Docker image: install into a
+# clean environment and verify the package imports and the console script
+# actually runs. This is separate from publish-pypi (release-please.yml),
+# which only runs after a release is cut - this job catches a broken package
+# build on every push/PR instead.
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  package-build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Build sdist and wheel
+        run: |
+          pip install build
+          python -m build
+
+      - name: Install built wheel into a clean venv
+        run: |
+          python -m venv /tmp/statuspage-exporter-venv
+          /tmp/statuspage-exporter-venv/bin/pip install dist/*.whl
+
+      - name: Verify package imports cleanly
+        run: |
+          /tmp/statuspage-exporter-venv/bin/python -c "
+          import statuspage_prometheus_exporter
+          import statuspage_prometheus_exporter.cache_manager
+          import statuspage_prometheus_exporter.gauges
+          import statuspage_prometheus_exporter.service_checker
+          import statuspage_prometheus_exporter.service_monitor
+          import statuspage_prometheus_exporter.slack_notify
+          import statuspage_prometheus_exporter.status_monitoring
+          print('Import OK')
+          "
+
+      - name: Verify console script runs a one-time pass against the bundled example config
+        run: |
+          mkdir -p /tmp/statuspage-exporter-run
+          cd /tmp/statuspage-exporter-run
+          RUN_MODE=once /tmp/statuspage-exporter-venv/bin/statuspage-prometheus-exporter > run.log 2>&1
+          cat run.log
+          grep -q "One-time monitoring run complete" run.log
+          test -f metrics/statuspage.prom
+          grep -q "statuspage_probe_check" metrics/statuspage.prom

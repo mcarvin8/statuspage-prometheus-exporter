@@ -3,9 +3,10 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app/statuspage-exporter
 
-# Copy application files (excluding services.json - users should mount their own)
-COPY src/*.py /app/statuspage-exporter/
-COPY src/services.json.example /app/statuspage-exporter/services.json.example
+# Copy the application package (excluding services.json - users should mount their own).
+# "python3 -m statuspage_prometheus_exporter..." requires WORKDIR (its parent) on
+# sys.path, which Python adds automatically for -m invocations.
+COPY src/statuspage_prometheus_exporter/ /app/statuspage-exporter/statuspage_prometheus_exporter/
 
 # Copy documentation and license
 COPY README.md /app/statuspage-exporter/README.md
@@ -36,7 +37,7 @@ RUN useradd --uid ${EXPORTER_UID} --create-home --shell /bin/bash exporter && \
 USER ${EXPORTER_UID}
 
 # Run the application
-ENTRYPOINT ["python3", "status_monitoring.py"]
+ENTRYPOINT ["python3", "-m", "statuspage_prometheus_exporter.status_monitoring"]
 EXPOSE 9001
 
 # Health check: verify metrics endpoint responds (uses METRICS_PORT env, default 9001)
