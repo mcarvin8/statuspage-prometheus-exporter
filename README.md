@@ -13,6 +13,7 @@ Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and
 - [Metrics](#metrics)
 - [Caching](#caching)
 - [Run with Docker](#run-with-docker)
+- [One-Time Run Mode (Cron)](#one-time-run-mode-cron)
 - [Kubernetes Example](#kubernetes-example)
 
 ## Features
@@ -81,9 +82,11 @@ docker run -d \
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `METRICS_PORT` | `9001` | Metrics HTTP port |
+| `RUN_MODE` | `daemon` | `daemon` runs continuously on a schedule; `once` runs a single pass and exits (see [One-Time Run Mode](#one-time-run-mode-cron)) |
+| `METRICS_PORT` | `9001` | Metrics HTTP port (`daemon` mode only) |
 | `SERVICES_JSON_PATH` | `/app/statuspage-exporter/services.json` | Path to config inside the container |
-| `CHECK_INTERVAL_MINUTES` | `20` | Poll interval |
+| `CHECK_INTERVAL_MINUTES` | `20` | Poll interval (`daemon` mode only) |
+| `METRICS_TEXTFILE_PATH` | `metrics/statuspage.prom` | Output path for the Prometheus textfile (`RUN_MODE=once` only) |
 | `DEBUG` | off | `true` → debug logs |
 | `CLEAR_CACHE` | off | `true` → wipe cache on startup |
 | `SLACK_WEBHOOK_URL` | _(unset)_ | [Slack webhook](https://api.slack.com/messaging/webhooks): one message per new / resolved incident |
@@ -98,6 +101,37 @@ docker run -d \
   -e CHECK_INTERVAL_MINUTES=10 \
   -e DEBUG=true \
   -e SLACK_WEBHOOK_URL='https://hooks.slack.com/services/T000/B000/XXXX' \
+  mcarvin8/statuspage-prometheus-exporter:latest
+```
+
+## One-Time Run Mode (Cron)
+
+If you'd rather trigger checks on your own schedule (e.g. host Cron, a Kubernetes `CronJob`) instead of running this as a long-lived daemon, set `RUN_MODE=once`. The exporter runs a single pass over all services, writes the results to a Prometheus **textfile**, then exits — no HTTP server is started, so `METRICS_PORT` and `CHECK_INTERVAL_MINUTES` don't apply.
+
+The textfile is written in the [Prometheus text exposition format](https://github.com/prometheus/node_exporter#textfile-collector), for pickup by node_exporter's `--collector.textfile.directory` (or any tool that scrapes `.prom` files).
+
+```bash
+docker run --rm \
+  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  -v /path/to/textfile-collector:/app/statuspage-exporter/metrics \
+  -e RUN_MODE=once \
+  mcarvin8/statuspage-prometheus-exporter:latest
+```
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `RUN_MODE` | `daemon` | Set to `once` for a single pass |
+| `METRICS_TEXTFILE_PATH` | `metrics/statuspage.prom` | Where the `.prom` file is written inside the container; point it at your mounted textfile-collector directory |
+
+Mount the same cache directory as in the daemon example if you want cache-based fallback across runs. The container's `HEALTHCHECK` targets the metrics HTTP endpoint and doesn't apply in this mode — it's harmless since the process exits right after the run.
+
+### Example crontab entry
+
+```
+*/20 * * * * docker run --rm \
+  -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
+  -v /path/to/textfile-collector:/app/statuspage-exporter/metrics \
+  -e RUN_MODE=once \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
