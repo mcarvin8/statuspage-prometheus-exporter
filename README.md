@@ -1,9 +1,11 @@
 # Atlassian StatusPage.io Prometheus Exporter
 
-![Docker Image Version (latest by date)](https://img.shields.io/docker/v/mcarvin8/statuspage-prometheus-exporter?sort=date)
-![Docker Pulls](https://img.shields.io/docker/pulls/mcarvin8/statuspage-prometheus-exporter)
-![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/mcarvin8/statuspage-prometheus-exporter)
-![PyPI](https://img.shields.io/pypi/v/statuspage-prometheus-exporter)
+[![Docker Image Version](https://img.shields.io/docker/v/mcarvin8/statuspage-prometheus-exporter?sort=date)](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter)
+[![Docker Pulls](https://img.shields.io/docker/pulls/mcarvin8/statuspage-prometheus-exporter)](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter)
+[![Docker Image Size](https://img.shields.io/docker/image-size/mcarvin8/statuspage-prometheus-exporter)](https://hub.docker.com/r/mcarvin8/statuspage-prometheus-exporter)
+[![PyPI Version](https://img.shields.io/pypi/v/statuspage-prometheus-exporter)](https://pypi.org/project/statuspage-prometheus-exporter/)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/statuspage-prometheus-exporter)](https://pypi.org/project/statuspage-prometheus-exporter/)
+[![PyPI Downloads](https://img.shields.io/pypi/dm/statuspage-prometheus-exporter)](https://pypi.org/project/statuspage-prometheus-exporter/)
 ![Coverage](https://raw.githubusercontent.com/mcarvin8/statuspage-prometheus-exporter/refs/heads/main/badges/coverage.svg)
 
 Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and components as Prometheus metrics (and optional Slack alerts on incident open/resolve).
