@@ -15,9 +15,14 @@ Monitoring Schedule:
     - Status checks run on a configurable interval (default: 20 minutes)
     - Initial check executes on service startup
     - Uses APScheduler for reliable scheduling
+    - Alternatively, RUN_MODE=once runs a single pass and exits, for callers
+      that schedule this exporter themselves (e.g. a Cron job) instead of
+      running it as a long-lived daemon
 
 The exporter exposes metrics via Prometheus on port 9001 (configurable via METRICS_PORT)
-for Grafana visualization and alerting on service disruptions.
+for Grafana visualization and alerting on service disruptions. In RUN_MODE=once, metrics
+are instead written to a Prometheus textfile (METRICS_TEXTFILE_PATH) for collection by
+node_exporter's textfile collector or similar.
 
 Service Configuration:
     - Service definitions are stored in services.json
@@ -25,20 +30,26 @@ Service Configuration:
     - Extensible to support additional service types
 
 Environment Variables:
-    - METRICS_PORT: Prometheus metrics server port (default: 9001)
-    - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20)
+    - RUN_MODE: 'daemon' (default) runs continuously on a schedule; 'once' runs a
+      single monitoring pass, writes a metrics textfile, and exits
+    - METRICS_PORT: Prometheus metrics server port (default: 9001, daemon mode only)
+    - METRICS_TEXTFILE_PATH: Output path for the Prometheus textfile
+      (default: metrics/statuspage.prom, RUN_MODE=once only)
+    - CHECK_INTERVAL_MINUTES: Interval in minutes between status checks (default: 20,
+      daemon mode only)
     - DEBUG: Enable debug logging (set to 'true' to enable, default: false/INFO level)
     - CLEAR_CACHE: Clear all cache files on startup (set to 'true' to enable, default: false)
     - SLACK_WEBHOOK_URL: Optional Slack incoming webhook for incident opened/resolved posts
 
 Functions:
     - schedule_tasks: Configures APScheduler jobs
-    - main: Entry point that starts metrics server and scheduler
+    - run_once: Executes a single monitoring pass and writes a metrics textfile
+    - main: Entry point that starts either the one-time run or the metrics server/scheduler
 """
 
 import os
 import logging
-from prometheus_client import start_http_server
+from prometheus_client import start_http_server, write_to_textfile, REGISTRY
 from apscheduler.schedulers.blocking import BlockingScheduler
 from apscheduler.triggers.cron import CronTrigger
 from service_monitor import monitor_services
@@ -76,17 +87,55 @@ def schedule_tasks(scheduler, interval_minutes=20):
     )
 
 
-def main():
-    """
-    Main entry point for the monitoring service.
-    """
-    logger.info("Starting Atlassian Status Page Prometheus Exporter...")
+def _clear_cache_if_requested():
+    """Clear all cache files if CLEAR_CACHE is set, per env var convention."""
+    clear_cache_on_startup = os.getenv("CLEAR_CACHE", "false").lower() in (
+        "true",
+        "1",
+        "yes",
+        "on",
+    )
+    if clear_cache_on_startup:
+        logger.info(
+            "CLEAR_CACHE environment variable is set - clearing all cache files..."
+        )
+        clear_cache()
+    else:
+        logger.debug("CLEAR_CACHE not set - preserving existing cache files")
 
-    # Log debug status
-    debug_enabled = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
-    log_level_name = "DEBUG" if debug_enabled else "INFO"
-    logger.info(f"Logging level: {log_level_name}")
 
+def run_once():
+    """
+    Run a single monitoring pass and exit.
+
+    Intended for callers (e.g. a Cron job) that want to run this exporter
+    on their own schedule instead of running it as a long-lived daemon.
+    Metrics are written to a Prometheus textfile for collection by
+    node_exporter's textfile collector (or similar), since there is no
+    running process for Prometheus to scrape once this exits.
+    """
+    logger.info("RUN_MODE=once - running a single monitoring pass...")
+
+    _clear_cache_if_requested()
+
+    # Pass is_initial_run=True since each one-time run starts from a clean gauge state
+    monitor_services(is_initial_run=True)
+
+    textfile_path = os.getenv("METRICS_TEXTFILE_PATH", "metrics/statuspage.prom")
+    textfile_dir = os.path.dirname(textfile_path)
+    if textfile_dir:
+        os.makedirs(textfile_dir, exist_ok=True)
+    write_to_textfile(textfile_path, REGISTRY)
+    logger.info(f"Wrote metrics textfile to {textfile_path}")
+
+    logger.info("One-time monitoring run complete, exiting.")
+
+
+def run_daemon():
+    """
+    Run the exporter as a long-lived daemon: start the metrics HTTP server
+    and schedule recurring monitoring runs.
+    """
     # Start Prometheus metrics server
     metrics_port = int(os.getenv("METRICS_PORT", 9001))
     start_http_server(metrics_port)
@@ -102,20 +151,7 @@ def main():
     # Schedule tasks
     schedule_tasks(scheduler, check_interval)
 
-    # Check if cache should be cleared on startup
-    clear_cache_on_startup = os.getenv("CLEAR_CACHE", "false").lower() in (
-        "true",
-        "1",
-        "yes",
-        "on",
-    )
-    if clear_cache_on_startup:
-        logger.info(
-            "CLEAR_CACHE environment variable is set - clearing all cache files..."
-        )
-        clear_cache()
-    else:
-        logger.debug("CLEAR_CACHE not set - preserving existing cache files")
+    _clear_cache_if_requested()
 
     # Execute initial monitoring run
     # Pass is_initial_run=True to clear all gauges and remove stale data from previous pod instances
@@ -130,6 +166,24 @@ def main():
         logger.info("Received interrupt signal, shutting down...")
         scheduler.shutdown()
         logger.info("Scheduler stopped")
+
+
+def main():
+    """
+    Main entry point for the monitoring service.
+    """
+    logger.info("Starting Atlassian Status Page Prometheus Exporter...")
+
+    # Log debug status
+    debug_enabled = os.getenv("DEBUG", "false").lower() in ("true", "1", "yes", "on")
+    log_level_name = "DEBUG" if debug_enabled else "INFO"
+    logger.info(f"Logging level: {log_level_name}")
+
+    run_mode = os.getenv("RUN_MODE", "daemon").lower()
+    if run_mode == "once":
+        run_once()
+    else:
+        run_daemon()
 
 
 if __name__ == "__main__":

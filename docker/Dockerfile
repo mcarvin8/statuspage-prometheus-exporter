@@ -22,7 +22,7 @@ LABEL org.opencontainers.image.title="statuspage-prometheus-exporter" \
 RUN apt-get update && apt-get install -y --no-install-recommends tzdata && \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir prometheus_client requests apscheduler && \
-    mkdir -p /app/statuspage-exporter/cache
+    mkdir -p /app/statuspage-exporter/cache /app/statuspage-exporter/metrics
 
 # Set the default timezone
 ENV TZ=UTC
