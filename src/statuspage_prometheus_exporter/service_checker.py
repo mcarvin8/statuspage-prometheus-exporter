@@ -71,13 +71,16 @@ from urllib3.util.retry import Retry
 import logging
 import time
 from typing import Dict, Any
-from cache_manager import save_service_response, load_service_response
+from .cache_manager import save_service_response, load_service_response
 
 logger = logging.getLogger(__name__)
 
-# Allow services.json to be specified via environment variable (useful for Docker)
+# Allow services.json to be specified via environment variable (useful for Docker
+# and Kubernetes). When unset, look for services.json in the current working
+# directory (matches the Docker image's WORKDIR and is the natural convention
+# for a pip-installed console script run from a project directory).
 config_path = os.getenv(
-    "SERVICES_JSON_PATH", os.path.join(os.path.dirname(__file__), "services.json")
+    "SERVICES_JSON_PATH", os.path.join(os.getcwd(), "services.json")
 )
 
 if not os.path.exists(config_path):
@@ -96,7 +99,11 @@ if not os.path.exists(config_path):
         )
 
 with open(config_path, "r") as f:
-    SERVICES = json.load(f)
+    _raw_services = json.load(f)
+
+# Keys starting with "_" (e.g. "_comment" in services.json.example) are
+# documentation, not service definitions - skip them.
+SERVICES = {k: v for k, v in _raw_services.items() if not k.startswith("_")}
 
 
 def create_retry_session(

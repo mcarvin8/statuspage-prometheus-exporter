@@ -3,6 +3,7 @@
 ![Docker Image Version (latest by date)](https://img.shields.io/docker/v/mcarvin8/statuspage-prometheus-exporter?sort=date)
 ![Docker Pulls](https://img.shields.io/docker/pulls/mcarvin8/statuspage-prometheus-exporter)
 ![Docker Image Size (latest by date)](https://img.shields.io/docker/image-size/mcarvin8/statuspage-prometheus-exporter)
+![PyPI](https://img.shields.io/pypi/v/statuspage-prometheus-exporter)
 ![Coverage](https://raw.githubusercontent.com/mcarvin8/statuspage-prometheus-exporter/refs/heads/main/badges/coverage.svg)
 
 Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and components as Prometheus metrics (and optional Slack alerts on incident open/resolve).
@@ -13,6 +14,7 @@ Polls StatusPage.io summary APIs and exposes health, incidents, maintenance, and
 - [Metrics](#metrics)
 - [Caching](#caching)
 - [Run with Docker](#run-with-docker)
+- [Run as a Python Package (pip)](#run-as-a-python-package-pip)
 - [One-Time Run Mode (Cron)](#one-time-run-mode-cron)
 - [Kubernetes Example](#kubernetes-example)
 
@@ -104,18 +106,42 @@ docker run -d \
   mcarvin8/statuspage-prometheus-exporter:latest
 ```
 
+## Run as a Python Package (pip)
+
+Prefer running on bare metal/a VM instead of Docker? The exporter is also published to [PyPI](https://pypi.org/project/statuspage-prometheus-exporter/):
+
+```bash
+pip install statuspage-prometheus-exporter
+```
+
+Run it from a directory containing your `services.json` (the console script looks for `./services.json` by default, same as the Docker image looks in its `WORKDIR` — set `SERVICES_JSON_PATH` to point elsewhere):
+
+```bash
+statuspage-prometheus-exporter
+```
+
+This runs the same always-on daemon as the Docker image, using the same [environment variables](#3-optional-environment-variables) (`METRICS_PORT`, `CHECK_INTERVAL_MINUTES`, `DEBUG`, `CLEAR_CACHE`, `SLACK_WEBHOOK_URL`, etc.). The cache directory (`./cache`) is also created relative to the directory you run it from.
+
+If no `services.json` is found and `SERVICES_JSON_PATH` isn't set, it falls back to the bundled `services.json.example` (a demo service) and logs a warning — useful for a first smoke-test, not for real monitoring.
+
 ## One-Time Run Mode (Cron)
 
 If you'd rather trigger checks on your own schedule (e.g. host Cron, a Kubernetes `CronJob`) instead of running this as a long-lived daemon, set `RUN_MODE=once`. The exporter runs a single pass over all services, writes the results to a Prometheus **textfile**, then exits — no HTTP server is started, so `METRICS_PORT` and `CHECK_INTERVAL_MINUTES` don't apply.
 
-The textfile is written in the [Prometheus text exposition format](https://github.com/prometheus/node_exporter#textfile-collector), for pickup by node_exporter's `--collector.textfile.directory` (or any tool that scrapes `.prom` files).
+The textfile is written in the [Prometheus text exposition format](https://github.com/prometheus/node_exporter#textfile-collector), for pickup by node_exporter's `--collector.textfile.directory` (or any tool that scrapes `.prom` files). Works with either distribution:
 
 ```bash
+# Docker
 docker run --rm \
   -v /path/to/your/services.json:/app/statuspage-exporter/services.json \
   -v /path/to/textfile-collector:/app/statuspage-exporter/metrics \
   -e RUN_MODE=once \
   mcarvin8/statuspage-prometheus-exporter:latest
+
+# pip install
+cd /path/to/your/project  # contains services.json
+RUN_MODE=once METRICS_TEXTFILE_PATH=/path/to/textfile-collector/statuspage.prom \
+  statuspage-prometheus-exporter
 ```
 
 | Variable | Default | Purpose |

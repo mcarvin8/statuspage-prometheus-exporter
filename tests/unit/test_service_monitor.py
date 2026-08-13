@@ -3,7 +3,6 @@ import sys
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 MOCK_RESULT = {
     "success": True,
@@ -36,64 +35,64 @@ MOCK_INCIDENT_RESULT = {
 }
 
 
-@patch("service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
-@patch("service_monitor.check_service_status", return_value=MOCK_RESULT)
-@patch("service_monitor.load_service_response", return_value=None)
-@patch("service_monitor.statuspage_status_gauge")
-@patch("service_monitor.statuspage_response_time_gauge")
-@patch("service_monitor.statuspage_incident_info")
-@patch("service_monitor.statuspage_maintenance_info")
-@patch("service_monitor.statuspage_component_status")
-@patch("service_monitor.statuspage_component_timestamp")
-@patch("service_monitor.statuspage_probe_check")
-@patch("service_monitor.statuspage_application_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
+@patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value=MOCK_RESULT)
+@patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value=None)
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_status_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_response_time_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_incident_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_maintenance_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_status")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_probe_check")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_application_timestamp")
 def test_monitor_services_operational(
     mock_app_ts, mock_probe, mock_comp_ts, mock_comp, mock_maint,
     mock_inc, mock_rt, mock_status, mock_load, mock_check
 ):
-    from service_monitor import monitor_services
+    from statuspage_prometheus_exporter.service_monitor import monitor_services
     monitor_services(is_initial_run=True)
     mock_status.labels.assert_called()
     mock_probe.labels.assert_called()
 
 
-@patch("service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
-@patch("service_monitor.check_service_status", return_value=MOCK_INCIDENT_RESULT)
-@patch("service_monitor.load_service_response", return_value=None)
-@patch("service_monitor.notify_incident_opened")
-@patch("service_monitor.statuspage_status_gauge")
-@patch("service_monitor.statuspage_response_time_gauge")
-@patch("service_monitor.statuspage_incident_info")
-@patch("service_monitor.statuspage_maintenance_info")
-@patch("service_monitor.statuspage_component_status")
-@patch("service_monitor.statuspage_component_timestamp")
-@patch("service_monitor.statuspage_probe_check")
-@patch("service_monitor.statuspage_application_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
+@patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value=MOCK_INCIDENT_RESULT)
+@patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value=None)
+@patch("statuspage_prometheus_exporter.service_monitor.notify_incident_opened")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_status_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_response_time_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_incident_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_maintenance_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_status")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_probe_check")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_application_timestamp")
 def test_monitor_services_notifies_new_incident(
     mock_app_ts, mock_probe, mock_comp_ts, mock_comp, mock_maint,
     mock_inc, mock_rt, mock_status, mock_notify, mock_load, mock_check
 ):
-    from service_monitor import monitor_services
+    from statuspage_prometheus_exporter.service_monitor import monitor_services
     monitor_services(is_initial_run=False)
     mock_notify.assert_called_once()
 
 
-@patch("service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
-@patch("service_monitor.check_service_status", return_value={**MOCK_RESULT, "success": False, "status": None})
-@patch("service_monitor.load_service_response", return_value=None)
-@patch("service_monitor.statuspage_probe_check")
-@patch("service_monitor.statuspage_response_time_gauge")
-@patch("service_monitor.statuspage_status_gauge")
-@patch("service_monitor.statuspage_incident_info")
-@patch("service_monitor.statuspage_maintenance_info")
-@patch("service_monitor.statuspage_component_status")
-@patch("service_monitor.statuspage_component_timestamp")
-@patch("service_monitor.statuspage_application_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.SERVICES", {"svc_a": {"name": "Service A", "url": "https://example.com"}})
+@patch("statuspage_prometheus_exporter.service_monitor.check_service_status", return_value={**MOCK_RESULT, "success": False, "status": None})
+@patch("statuspage_prometheus_exporter.service_monitor.load_service_response", return_value=None)
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_probe_check")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_response_time_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_status_gauge")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_incident_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_maintenance_info")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_status")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_component_timestamp")
+@patch("statuspage_prometheus_exporter.service_monitor.statuspage_application_timestamp")
 def test_monitor_services_failed_check_skips_gauge(
     mock_app_ts, mock_comp_ts, mock_comp, mock_maint, mock_inc,
     mock_status, mock_rt, mock_probe, mock_load, mock_check
 ):
-    from service_monitor import monitor_services
+    from statuspage_prometheus_exporter.service_monitor import monitor_services
     monitor_services(is_initial_run=False)
     # status gauge should not be set when status is None
     mock_status.labels.return_value.set.assert_not_called()

@@ -1,4 +1,24 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
 [project]
+name = "statuspage-prometheus-exporter"
+dynamic = ["version"]
+description = "Poll Atlassian StatusPage.io summary APIs and expose health, incidents, maintenance, and components as Prometheus metrics."
+readme = "README.md"
+license = { file = "LICENSE.md" }
+authors = [
+    { name = "Matt Carvin", email = "matthewjcarvin@gmail.com" },
+]
+requires-python = ">=3.11"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Topic :: System :: Monitoring",
+]
 dependencies = [
     "prometheus_client",
     "apscheduler",
@@ -13,5 +33,29 @@ test = [
     "responses",
 ]
 
+[project.urls]
+Homepage = "https://github.com/mcarvin8/statuspage-prometheus-exporter"
+Issues = "https://github.com/mcarvin8/statuspage-prometheus-exporter/issues"
+
+[project.scripts]
+statuspage-prometheus-exporter = "statuspage_prometheus_exporter.status_monitoring:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+statuspage_prometheus_exporter = ["services.json.example"]
+
+[tool.setuptools.dynamic]
+version = { file = ["version.txt"] }
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+
 [tool.coverage.run]
-omit = ["src/status_monitoring.py"]
+source = ["src/statuspage_prometheus_exporter"]
+omit = ["src/statuspage_prometheus_exporter/status_monitoring.py"]

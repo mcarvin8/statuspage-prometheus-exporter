@@ -1,10 +1,9 @@
 # tests/unit/test_gauges.py
 import sys
 from pathlib import Path
-sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
 
 def test_gauges_import():
-    from gauges import (
+    from statuspage_prometheus_exporter.gauges import (
         statuspage_status_gauge,
         statuspage_response_time_gauge,
         statuspage_incident_info,

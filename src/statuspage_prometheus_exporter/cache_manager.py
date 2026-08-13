@@ -43,10 +43,10 @@ def get_cache_directory() -> Path:
     Returns:
         Path object pointing to the cache directory
     """
-    # Cache directory is relative to this script's location
-    script_dir = Path(__file__).parent
-    cache_dir = script_dir / "cache"
-    return cache_dir
+    # Cache directory is relative to the current working directory (matches
+    # the Docker image's WORKDIR and is the natural convention for a
+    # pip-installed console script run from a project directory).
+    return Path.cwd() / "cache"
 
 
 def ensure_cache_directory() -> Path:
